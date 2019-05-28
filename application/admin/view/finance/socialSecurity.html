@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>上海智慧务工-工资核算提交</title>
+  <link rel="stylesheet" href="__STATIC__/resources/layui/css/layui.css" media="all">
+  <link rel="stylesheet" href="__STATIC__/resources/css/style.css">
+  <style>
+    .layui-table-header .layui-table-cell {
+      white-space: normal;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body style="height:100%;overflow:scroll" class="layui-layout-body">
+<div class="layui-layout">
+  <!-- 内容主体区域 -->
+  <div style="padding: 15px;">
+    <div class="breadcrumb">
+        <span class="layui-breadcrumb">
+          <a href="javascript:;">财务管理</a>
+          <a><cite>社保费用核算</cite></a>
+        </span>
+    </div>
+    <div class="demoTable">
+      姓名：
+      <div class="layui-inline">
+        <input class="layui-input" name="name" id="name" autocomplete="off">
+      </div>
+      项目点：
+      <div class="layui-inline">
+        <input class="layui-input" name="site" id="site" autocomplete="off">
+      </div>
+      日期：
+      <div class="layui-inline">
+        <input class="layui-input" name="date" id="date" autocomplete="off">
+      </div>
+      <button class="layui-btn layui-btn-normal layui-icon layui-icon-search" data-type="search">搜索</button>
+      <div style="margin-top: 20px">
+        <button id="upLoadFile" class="layui-btn layui-btn-normal iconfont icon-tianjia">批量导入</button>
+        <button class="layui-btn layui-btn-normal iconfont icon-tianjia" data-type="add">添加</button>
+      </div>
+    </div>
+    <table class="layui-hide" id="mytable" lay-filter="test"></table>
+    <script type="text/html" id="toolbarDemo">
+      <div class="layui-btn-container">
+
+      </div>
+    </script>
+    <script type="text/html" id="barDemo">
+      <a class="layui-btn layui-btn-primary iconfont icon-shangchuan" style="color: #236CFF;" lay-event="submit">提交</a>
+      <a class="layui-btn layui-btn-primary layui-icon layui-icon-delete" style="color: #E85141;"
+         lay-event="del">删除</a>
+    </script>
+  </div>
+</div>
+<script src="__STATIC__/resources/layui/layui.js?t=1554901098009"></script>
+<script>
+  layui.use(['table', 'element', 'upload'], function () {
+    var element = layui.element,
+      table = layui.table,
+      upload = layui.upload;
+
+    upload.render({ //允许上传的文件后缀
+      elem: '#upLoadFile',
+      url: '/upload/',
+      accept: 'file', //excel文件
+      exts: 'xls', //只允许上传压缩文件
+      done: function (res) {
+        console.log(res)
+      }
+    });
+
+    table.render({
+      elem: '#mytable',
+      url: "{:url('finance/socialSecurity')}",
+      toolbar: '#toolbarDemo',
+      title: '用户数据表',
+      method: 'post',
+      parseData: function (res) { //res 即为原始返回的数据
+        var data = JSON.parse(res);
+        return {
+          "code": data.code, //解析接口状态
+          // "msg": res.message, //解析提示文本
+          "count": data.count, //解析数据长度
+          "data": data.data, //解析数据列表
+        };
+      },
+      totalRow: true,
+      cols: [[
+        {checkbox: true, fixed: true, rowspan: 2},
+        {align: 'center', field: 'soc_id', title: 'ID', width: 80, fixed: 'left', sort: true, rowspan: 2,totalRowText: '合计'},
+        {align: 'center', field: 'socialSecurityNumber', title: '社保编号', width: 120, sort: true, rowspan: 2, edit: true},
+        {align: 'center', field: 'name', title: '姓名', width: 120, rowspan: 2, edit: true},
+        {align: 'center', field: 'sex', title: '性别', width: 120, rowspan: 2, edit: true},
+        {align: 'center', field: 'IDNumber', title: '身份证号码', width: 180, rowspan: 2, edit: true},
+        {align: 'center', field: 'censusRegister', title: '户籍性质', width: 180, rowspan: 2, edit: true},
+        {align: 'center', field: 'declare', title: '单位申报职工月平均工资性收入', width: 120, rowspan: 2, edit: true,totalRow: true},
+        {align: 'center', field: 'basics', title: '月缴费基数', width: 120, rowspan: 2, edit: true,totalRow: true},
+        {align: 'center', title: '个人月缴纳金额明细', colspan: 5},
+        {align: 'center', title: '单位月缴纳金额明细', colspan: 7},
+        {align: 'center', field: 'total', title: '总计', width: 180, rowspan: 2, edit: true,totalRow: true},
+        {align: 'center', field: 'site', title: '项目点', width: 180, rowspan: 2, edit: true,totalRow: true},
+        {align: 'center', title: '操作', toolbar: '#barDemo', width: 250, rowspan: 2}
+      ],
+        [
+          {align: 'center', field: 'endowmentInsurance', title: '养老保险（8%）', width: 140, edit: true,totalRow: true},
+          {align: 'center', field: 'medicalInsurance', title: '医疗保险（2%）', width: 140, edit: true,totalRow: true},
+          {align: 'center', field: 'unemploymentInsurance', title: '失业保险（0.5%）', width: 150, edit: true,totalRow: true},
+          {align: 'center', field: 'largeMedicalInsurance', title: '大额医保', width: 140, edit: true,totalRow: true},
+          {align: 'center', field: 'personalTotal', title: '个人缴纳合计', width: 140, edit: true,totalRow: true},
+          {align: 'center', field: 'cendowmentInsurance', title: '养老保险（20%）', width: 150, edit: true,totalRow: true},
+          {align: 'center', field: 'cmedicalInsurance', title: '医疗保险（9.5%）', width: 150, edit: true,totalRow: true},
+          {align: 'center', field: 'cunemploymentInsurance', title: '失业保险（0.5%）', width: 150, edit: true,totalRow: true},
+          {align: 'center', field: 'cemploymentInjuryInsurance', title: '工伤保险（0.16%）', width: 160, edit: true,totalRow: true},
+          {align: 'center', field: 'cmaternityInsurance', title: '生育保险（1%）', width: 140, edit: true,totalRow: true},
+          {align: 'center', field: 'clargeMedicalInsurance', title: '大额医保（1.5%）', width: 150, edit: true,totalRow: true},
+          {align: 'center', field: 'companyTotal', title: '单位缴纳合计', width: 140, edit: true,totalRow: true},
+        ]],
+      id: 'testReload',
+      page: { //支持传入 laypage 组件的所有参数（某些参数除外，如：jump/elem） - 详见文档
+        layout: ['limit', 'count', 'prev', 'page', 'next', 'skip'], //自定义分页布局
+        //,curr: 5 //设定初始在第 5 页
+        groups: 5, //只显示 1 个连续页码
+        first: false, //不显示首页
+        last: false, //不显示尾页
+
+      }
+    });
+    var $ = layui.$, active = {
+      search: function () {
+        var name = $('#name');
+        var site = $('#site');
+        var date = $('#date');
+
+        //执行重载
+        table.reload('testReload', {
+          page: {
+            curr: 1 //重新从第 1 页开始
+          }
+          , where: {
+            name: name.val(),
+            site: site.val(),
+            date: date.val(),
+          }
+        });
+      },
+      add:function(obj){
+
+        table.reload('testReload',{
+          parseData: function(res) { //res 即为原始返回的数据
+            var data=JSON.parse(res);
+            var arr=data.data;
+            arr.unshift({});
+            return {
+              "code": data.code, //解析接口状态
+              // "msg": res.message, //解析提示文本
+              "count": data.count, //解析数据长度
+              "data": arr, //解析数据列表
+            };
+          },
+        })
+      },
+    };
+
+    $('.demoTable').on('click', '.layui-btn', function () {
+      var type = $(this).data('type');
+      active[type] ? active[type].call(this) : '';
+    });
+    //监听单元格编辑
+    table.on('edit(test)', function (obj) {
+      var value = obj.value, //得到修改后的值
+        data = obj.data, //得到所在行所有键值
+        field = obj.field; //得到字段
+      layer.msg('[ID: ' + data.id + '] ' + field + ' 字段更改为：' + value);
+    });
+  });
+</script>
+</body>
+</html>

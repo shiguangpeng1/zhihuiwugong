@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>上海智慧务工-添加事件</title>
+  <link rel="stylesheet" href="__STATIC__/resources/layui/css/layui.css" media="all">
+  <link rel="stylesheet" href="__STATIC__/resources/css/style.css">
+  <style>
+    .layui-form-item{
+      margin: 30px 0;
+    }
+    .layui-form-label{
+      font-size: 18px;
+      width: 120px;
+    }
+    .layui-input-block {
+      margin-left: 156px;
+      min-height: 40px;
+    }
+  </style>
+</head>
+<body style="height:100%;overflow:scroll" class="layui-layout-body">
+<div class="layui-layout">
+  <!-- 内容主体区域 -->
+  <div style="padding: 15px;">
+    <div class="breadcrumb">
+        <span class="layui-breadcrumb">
+          <a href="javascript:;">管理员管理</a>
+          <a href="./Administrator.html">角色管理</a>
+          <a><cite>添加管理员</cite></a>
+        </span>
+    </div>
+    <div class="layui-row">
+      <div class="layui-col-xs9 layui-col-md6 layui-col-md-offset3">
+        <form class="layui-form" action="" lay-filter="example">
+
+          <div class="layui-form-item">
+            <label for="role_name" class="layui-form-label">姓名</label>
+            <div class="layui-input-block">
+              <input type="text" name="handle_name" id="name" lay-verify="title" autocomplete="off" placeholder="请输入姓名"
+                     class="layui-input">
+            </div>
+          </div>
+          <div class="layui-form-item">
+            <label class="layui-form-label">事件名称</label>
+            <div class="layui-input-block">
+              <input type="text" name="handle_events" id="event" lay-verify="title" autocomplete="off" placeholder="请输入事件名称"
+                     class="layui-input">
+            </div>
+          </div>
+          <div class="layui-form-item">
+            <label class="layui-form-label">时间</label>
+            <div class="layui-input-block">
+              <input type="text" name="time" readonly id="date-picker" lay-verify="title" autocomplete="off" placeholder="请输入时间"
+                     class="layui-input">
+            </div>
+          </div>
+
+          <div class="layui-form-item">
+            <div class="layui-input-block">
+              <button class="layui-btn layui-btn-fluid layui-btn-normal" lay-submit="##" lay-filter="demo1">提交</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+
+  </div>
+</div>
+<script src="__STATIC__/resources/layui/layui.js?t=1554901098009"></script>
+<script>
+  layui.use(['table', 'element','laydate'], function () {
+    var element = layui.element,
+      form = layui.form,
+      $ = layui.$,
+      laydate=layui.laydate;
+    laydate.render({
+      elem: '#date-picker',
+    });
+    form.on('submit(demo1)', function (data) {
+
+      $.ajax({
+        url: "{:url('power/addadmin')}",
+        type: 'post',
+        dataType: 'json',
+        data: data.field,
+        success: function (res) {
+
+          res =JSON.parse(res);
+          //console.log(res);
+          if (res.status == 200) {
+            window.location = "{:url('admin/power/administrator')}";
+          } else {
+            alert(res.message);
+          }
+        }
+      });
+      return false;
+    });
+  });
+</script>
+</body>
+</html>

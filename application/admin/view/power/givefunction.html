@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>上海智慧务工-设置功能</title>
+  <link rel="stylesheet" href="__STATIC__/resources/layui/css/layui.css" media="all">
+  <link rel="stylesheet" href="__STATIC__/resources/css/style.css">
+  <style>
+    .layui-form-item{
+      margin-bottom: 5px;
+    }
+    .layui-form-item.secondary{
+      margin-left: 50px;
+    }
+    .layui-form-label{
+      width: 100px;
+      text-align: left;
+    }
+  </style>
+</head>
+<body style="height:100%;overflow:scroll" class="layui-layout-body">
+<div class="layui-layout">
+  <!-- 内容主体区域 -->
+  <div style="padding: 15px;">
+    <div class="breadcrumb">
+        <span class="layui-breadcrumb">
+          <a href="javascript:;">管理员管理</a>
+          <a href="{:url('admin/admin/management')}">角色功能管理</a>
+          <a><cite>设置功能</cite></a>
+        </span>
+    </div>
+
+    <form class="layui-form" action="##">
+
+      <div class="layui-form-item">
+        <label class="layui-form-label">人事管理</label>
+        <div class="layui-input-block">
+          <input type="checkbox" name="personnel" lay-skin="switch" lay-filter="switchTest" lay-text="ON|OFF">
+        </div>
+      </div>
+
+      <div class="layui-form-item secondary">
+        <label class="layui-form-label">添加</label>
+        <div class="layui-input-block">
+          <input type="checkbox" name="p_add"  lay-skin="switch" lay-filter="switchTest" lay-text="ON|OFF">
+        </div>
+      </div>
+      <div class="layui-form-item secondary">
+        <label class="layui-form-label">删除</label>
+        <div class="layui-input-block">
+          <input type="checkbox" name="p_del"  lay-skin="switch" lay-filter="switchTest" lay-text="ON|OFF">
+        </div>
+      </div>
+      <div class="layui-form-item secondary">
+        <label class="layui-form-label">导出</label>
+        <div class="layui-input-block">
+          <input type="checkbox" name="p_output"  lay-skin="switch" lay-filter="switchTest" lay-text="ON|OFF">
+        </div>
+      </div>
+      <div class="layui-form-item secondary">
+        <label class="layui-form-label">导入</label>
+        <div class="layui-input-block">
+          <input type="checkbox" name="p_inside"  lay-skin="switch" lay-filter="switchTest" lay-text="ON|OFF">
+        </div>
+      </div>
+      <div class="layui-form-item">
+        <label class="layui-form-label">财务管理</label>
+        <div class="layui-input-block">
+          <input type="checkbox" name="finance" lay-skin="switch" lay-filter="switchTest" lay-text="ON|OFF">
+        </div>
+      </div>
+      <div class="layui-form-item secondary">
+        <label class="layui-form-label">添加</label>
+        <div class="layui-input-block">
+          <input type="checkbox" name="rf_add"  lay-skin="switch" lay-filter="switchTest" lay-text="ON|OFF">
+        </div>
+      </div>
+      <div class="layui-form-item secondary">
+        <label class="layui-form-label">删除</label>
+        <div class="layui-input-block">
+          <input type="checkbox" name="f_del"  lay-skin="switch" lay-filter="switchTest" lay-text="ON|OFF">
+        </div>
+      </div>
+
+      <div class="layui-form-item secondary">
+        <label class="layui-form-label">导入</label>
+        <div class="layui-input-block">
+          <input type="checkbox" name="f_inside"  lay-skin="switch" lay-filter="switchTest" lay-text="ON|OFF">
+        </div>
+      </div>
+      <div class="layui-form-item">
+        <div class="layui-input-block">
+          <button class="layui-btn" lay-submit lay-filter="formDemo">立即提交</button>
+          <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+<script src="__STATIC__/resources/layui/layui.js?t=1554901098009"></script>
+<script>
+  layui.use(['element','form'], function () {
+    var $ = layui.$,
+     element = layui.element,
+     form = layui.form;
+    //监听指定开关
+    form.on('switch(switchTest)', function(data){
+      layer.msg('开关：'+ (this.checked ? 'true' : 'false'), {
+        offset: '6px'
+      });
+    });
+    form.on('submit(formDemo)', function(data){
+      layer.msg(JSON.stringify(data.field));
+        $.ajax({
+          url:"{:url('power/add')}",
+          type:'post',
+          data:data.field,
+          success:function(res){
+            console.log(res);
+            // if (res.status == 1){
+            //   window.location="{:url('console/console/index')}";
+            // }else{
+            //   alert(res.message);
+            // }
+          }
+        });
+      return false;
+    });
+  });
+</script>
+</body>
+</html>

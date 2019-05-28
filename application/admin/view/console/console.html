@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>上海智慧务工-控制台</title>
+  <link rel="stylesheet" href="__STATIC__/resources/layui/css/layui.css" media="all">
+  <link rel="stylesheet" href="__STATIC__/resources/css/style.css">
+</head>
+<body style="height:100%;overflow:scroll" class="layui-layout-body">
+<div class="layui-layout">
+
+  <!-- 内容主体区域 -->
+  <div style="padding: 15px;">
+    <div class="breadcrumb">
+        <span class="layui-breadcrumb">
+          <a href="javascript:">控制台</a>
+        </span>
+    </div>
+    <div class="layui-row">
+      <div style="background-color: #36cc62" class="card layui-col-sm12 layui-col-md6">
+        <div class="layui-row">
+          <div class="layui-col-xs2 layui-col-xs-offset1">
+            <img src="/static/resources/img/ico1.png" alt="">
+          </div>
+
+          <div class="layui-col-sm7 text-box">
+            <p class="text"><?php echo $zai?></p>
+            <p class="text">在职人数</p>
+          </div>
+        </div>
+      </div>
+      <div style="background-color: #0ecccc" class="card layui-col-sm12 layui-col-md6">
+        <div class="layui-row">
+          <div class="layui-col-xs2 layui-col-xs-offset1">
+            <img src="/static/resources/img/ico2.png" alt="">
+          </div>
+
+          <div class="layui-col-sm7 text-box">
+            <p class="text"><?php echo $li?></p>
+            <p class="text">离职人数</p>
+          </div>
+        </div>
+      </div>
+      <div style="background-color: #ffb54c" class="card layui-col-sm12 layui-col-md6">
+        <div class="layui-row">
+          <div class="layui-col-xs2 layui-col-xs-offset1">
+            <img src="/static/resources/img/ico3.png" alt="">
+          </div>
+
+          <div class="layui-col-sm7 text-box">
+            <p class="text"><?php echo $insured?></p>
+            <p class="text">参保人数</p>
+          </div>
+        </div>
+      </div>
+      <div style="background-color: #fa6557" class="card layui-col-sm12 layui-col-md6">
+        <div class="layui-row">
+          <div class="layui-col-xs2 layui-col-xs-offset1">
+            <img src="/static/resources/img/ico4.png" alt="">
+          </div>
+
+          <div class="layui-col-sm7 text-box">
+            <p class="text"><?php echo $salary?></p>
+            <p class="text">发薪人数</p>
+          </div>
+        </div>
+      </div>
+      <div style="background-color: #57aefa" class="card layui-col-sm12 layui-col-md6">
+        <div class="layui-row">
+          <div class="layui-col-xs2 layui-col-xs-offset1">
+            <img src="/static/resources/img/ico5.png" alt="">
+          </div>
+
+          <div class="layui-col-sm7 text-box">
+            <p class="text"><?php echo $surplus?></p>
+            <p class="text">剩余一个月合同到期人数</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+
+</div>
+
+<script src="__STATIC__/resources/layui/layui.js?t=1554901098009"></script>
+<script>
+  //JavaScript代码区域
+  layui.use(['element', 'layer', 'form'], function () {
+    var element = layui.element;
+
+  });
+</script>
+</body>
+</html>
