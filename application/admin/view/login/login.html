@@ -6,6 +6,7 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <link rel="icon" href="__STATIC__/resources/layui/img/favicon.ico" type="image/x-icon" />
   <link rel="stylesheet" href="__STATIC__/resources/layui/css/layui.css" media="all">
   <link rel="stylesheet" href="__STATIC__/resources/css/style.css">
 </head>
@@ -15,12 +16,12 @@
 
     <div class="logo-box">
       <div class="logo">
-        <img src="" alt="">
+        <img src="/static/resources/img/logo.png" alt="">
       </div>
-      <h2 class="title">上海智慧务工</h2>
+      <h2 class="title">昱彤人力资源管理平台</h2>
     </div>
     <form class="layui-form" action="" lay-filter="example">
-      <h2 class="login-title">登录</h2>
+      <h2 class="login-title"></h2>
       <div class="layui-form-item">
 
         <div class="layui-input-block">
@@ -37,7 +38,7 @@
 
       <div class="layui-form-item">
         <div class="layui-input-block">
-          <div class="btn" lay-submit="##" lay-filter="demo1"><span class="layui-icon layui-icon-ok"></span></div>
+          <button class="btn" lay-submit="##" lay-filter="demo1">登录</button>
         </div>
       </div>
     </form>
@@ -48,26 +49,24 @@
 <script src="__STATIC__/resources/layui/layui.js?t=1554901098009"></script>
 
 <script>
+  if (window !== top)
+    top.location.href = location.href;
   layui.use(['layer','form'],function(){
     var layer=layui.layer,
         form=layui.form;
      var $=layui.$;
    form.on('submit(demo1)', function(data){
-    // layer.alert(JSON.stringify(data.field), {
-    //
-    // })
       $.ajax({
          url:"{:url('login/add')}",
          type:'post',
         dataType:'json',
          data:data.field,
           success:function(res){
-           console.log(res);
-            if (res.status == 1){
+
+            if (res.status === 1){
               window.location="{:url('admin/index/index')}";
-              // window.location="{:url('admin/index/index')}";
             }else{
-              alert(res.message);
+              layer.msg(res.message,{icon:2})
             }
           }
      });

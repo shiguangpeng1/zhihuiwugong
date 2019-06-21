@@ -36,8 +36,8 @@
   <div style="padding: 15px;">
     <div class="breadcrumb">
         <span class="layui-breadcrumb">
-          <a href="Administrator.html">管理员管理</a>
-          <a href="Administrator.html">角色管理</a>
+          <a href="administrator.html">管理员管理</a>
+          <a href="administrator.html">角色管理</a>
           <a><cite>查看权限</cite></a>
         </span>
     </div>
@@ -46,22 +46,26 @@
       {foreach $power as $val}
       <div class="layui-form-item">
         <label class="layui-form-label" data-id="{$val['power_id']}">{$val['power_name']}</label>
-        {foreach $data as $vv}
-        {if in_array($vv['power_id'],$data)}
         <div class="layui-input-block">
-          <input type="checkbox" checked="{$val['power_id']?true:false}" name="admin" lay-skin="switch" lay-filter="switchTest" lay-text="ON|OFF">
+          <!--<input type="checkbox" checked="{$val['power_id']?true:false}" name="admin" lay-skin="switch" lay-filter="switchTest" lay-text="ON|OFF">-->
         </div>
-        {/if}
-        {/foreach}
       </div>
+
+
       {foreach $val['sub'] as $v}
       <div class="layui-form-item secondary">
         <label class="layui-form-label" data-ids="{$v['power_id']}">{$v['power_name']}</label>
         <div class="layui-input-block">
-          <input type="checkbox" name="role" checked="{$val['power_id']?true:false}" lay-skin="switch" lay-filter="switchTest" lay-text="ON|OFF">
+          {if in_array($v['route'],$quanxian)}
+            <input disabled type="checkbox" checked lay-skin="switch" lay-filter="switchTest" lay-text="ON|OFF">
+          {else/}
+            <input disabled type="checkbox" lay-skin="switch" lay-filter="switchTest" lay-text="ON|OFF">
+          {/if}
         </div>
       </div>
       {/foreach}
+
+
       {/foreach}
     </form>
   </div>
@@ -72,29 +76,7 @@
     var $ = layui.$,
             element = layui.element,
             form = layui.form;
-    //监听指定开关
-    form.on('switch(switchTest)', function(data){
-      layer.msg('开关：'+ (this.checked ? 'true' : 'false'), {
-        offset: '6px'
-      });
-    });
-    form.on('submit(formDemo)', function(data){
-      layer.msg(JSON.stringify(data.field));
-      $.ajax({
-        url:"{:url('power/add')}",
-        type:'post',
-        data:data.field,
-        success:function(res){
-          console.log(res);
-          // if (res.status == 1){
-          //   window.location="{:url('console/console/index')}";
-          // }else{
-          //   alert(res.message);
-          // }
-        }
-      });
-      return false;
-    });
+
   });
 </script>
 </body>

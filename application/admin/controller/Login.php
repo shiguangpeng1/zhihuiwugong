@@ -7,46 +7,50 @@ use think\Request;
 use think\Db;
 use think\Session;
 
-class Login extends controller
+class Login extends Controller
 {
     public function index()
     {
         return view('login');
     }
 
+    public function errors()
+    {
+        return view('errors');
+    }
+
     public function add(Request $request)
     {
-
         if ($request->isPost()){
-
             $username = input('admin');
 
             $password = input('pwd');
-
             if ($username ==''){
-                $this->error('用户名不能为空');die;
+                $request =[
+                    'message' => '用户名不能为空',
+                    'status'  => 0
+                ];
+                return json($request);die;
             }
 
             if ($password == ''){
-
-                $this->error('密码不能为空');die;
+                $request =[
+                    'message' => '密码不能为空',
+                    'status'  => 0
+                ];
+                return json($request);die;
             }
 
             $data = db::name('nine_admin')->where('admin',$username)->find();
 
             //$res = db('nine_admin')->where('admin',$username)->find();
-
             if ($data) {
                 if ($data['pwd'] == md5($password)) {
-
-                    session('admin',$data);
-
+                    session('admin',$data['admin']);
                     $request =[
                         'message' => '登录成功',
                         'status'  => 1
-
                     ];
-
                     //管理员日志
                     $record = [
                         'uid'  => session::get('admin.admin'),
@@ -56,19 +60,16 @@ class Login extends controller
                     if ($data['status'] == 1 ){
                         db::name('back_record')->insert($record);
                     }
-
                 } else{
                     $request =[
                         'message' => '密码错误',
                         'status'  => 0
-
                     ];
                 }
             } else{
                 $request =[
                     'message' => '用户名不存在请先注册',
                     'status'  => 2
-
                 ];
             }
             return json($request);

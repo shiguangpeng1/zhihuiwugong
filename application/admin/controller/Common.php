@@ -1,35 +1,52 @@
 <?php
 
-namespace app\admin\controller;
+namespace app\admin\Controller;
 
 use think\Controller;
-use think\Request;
 use think\Db;
+use think\Session;
 
 class Common extends Controller
 {
 
+    protected $user='';
+
     public function __construct()
     {
-        header('content-type:text/html;charset=utf-8');
-        $user = session('admin');
-
-        if (!isset($user)){
+        if (Session::get('admin')===null){
             $this->success('请先登录','login/index');
         }
 
+        $user=Session::get('admin');
         $route = \request()->controller().'/'.\request()->action();
-
         $route = strtolower($route);
 
-        $power = db::query("select * from nine_power where power_id in(select p_id from nine_rp where r_id in(select r_id from nine_ar where a_id=$user[admin_id]))");
+        $user = Db::name('nine_admin')->where(['admin' => $user])->find();
 
-        $routeArr = array_column($power,'route');
-//        var_dump($route);die;
-        if (!(in_array($route,$routeArr))){
-            echo "<script>alert('对不起，你还没有访问的权限');</script>";die;
+        if(!$user){
+            Session::delete('admin');
+            $this->redirect('login/index');
         }
+
+        if($user['status']!=2){//不是超级管理员的进行权限验证
+            $quanxian=explode(',',$user['quanxian']);
+            $open=0;
+            if($route == 'index/index'){
+                $open = 1;
+            }
+            for ($i = 0; $i < count($quanxian); $i++) {
+                if ($quanxian[$i] == $route) {
+                    $open = 1;
+                }
+            }
+            if($open == 0){
+                $this->redirect('Login/errors');
+            }
+        }
+        $this->user=$user;
     }
+
+
 
     public function recursion($data, $pid)
     {

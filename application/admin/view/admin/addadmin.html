@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>上海智慧务工-添加管理员</title>
+  <link rel="stylesheet" href="__STATIC__/resources/layui/css/layui.css" media="all">
+  <link rel="stylesheet" href="__STATIC__/resources/css/style.css">
+  <style>
+    .layui-form-item{
+      margin: 30px 0;
+    }
+    .layui-form-label{
+      font-size: 18px;
+      width: 120px;
+    }
+    .layui-input-block {
+      margin-left: 156px;
+      min-height: 40px;
+    }
+  </style>
+</head>
+<body style="height:100%;overflow:scroll" class="layui-layout-body">
+<div class="layui-layout">
+  <!-- 内容主体区域 -->
+  <div style="padding: 15px;">
+    <div class="breadcrumb">
+        <span class="layui-breadcrumb">
+          <a href="javascript:;">管理员管理</a>
+          <a href="./administrator.html">角色管理</a>
+          <a><cite>添加管理员</cite></a>
+        </span>
+    </div>
+    <div class="layui-row">
+      <div class="layui-col-xs9 layui-col-md6 layui-col-md-offset3">
+        <form class="layui-form" action="" lay-filter="example">
+
+          <div class="layui-form-item">
+            <label for="role_name" class="layui-form-label">权限名称</label>
+            <div class="layui-input-block">
+              <input type="text" name="power_name" id="power_name" lay-verify="title" autocomplete="off" placeholder="权限名称"
+                     class="layui-input">
+            </div>
+          </div>
+          <div class="layui-form-item">
+            <label for="role_name" class="layui-form-label">权限路由</label>
+            <div class="layui-input-block">
+              <input type="text" name="route" id="route" lay-verify="title" autocomplete="off" placeholder="权限名称"
+                     class="layui-input">
+            </div>
+          </div>
+          <div class="layui-form-item">
+            <label for="site" class="layui-form-label">父级权限名称</label>
+            <div class="layui-input-block">
+              <select name="pid" id="pid">
+                <option value="">父级权限名称</option>
+                {foreach $role as $v}
+                <option value="{$v['power_id']}">{$v['power_name']}</option>
+                {/foreach}
+              </select>
+            </div>
+          </div>
+
+          <div class="layui-form-item">
+            <div class="layui-input-block">
+              <button class="layui-btn layui-btn-fluid layui-btn-normal" lay-submit="##" lay-filter="demo1">确认添加</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+
+  </div>
+</div>
+<script src="__STATIC__/resources/layui/layui.js?t=1554901098009"></script>
+<script>
+  layui.use(['table', 'element'], function () {
+    var element = layui.element,
+      form = layui.form,
+      $ = layui.$;
+
+    form.on('submit(demo1)', function (data) {
+      console.log(data);
+      $.ajax({
+        url: "{:url('admin/addadmin')}",
+        type: 'post',
+        dataType: 'json',
+        data: data.field,
+        success: function (res) {
+
+          res =JSON.parse(res);
+
+          if (res.code === 0) {
+            layer.msg('添加成功', {
+              icon: 1,//提示的样式
+              time: 1000, //1秒关闭（如果不配置，默认是3秒）//设置后不需要自己写定时关闭了，单位是毫秒
+              end: function () {
+                location.href = '/admin/admin/role';
+              }
+            })
+          } else {
+            layer.msg('添加失败', {icon: 2});
+          }
+        }
+      });
+      return false;
+    });
+  });
+</script>
+</body>
+</html>

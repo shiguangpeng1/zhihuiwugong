@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>上海智慧务工-功能管理</title>
+  <link rel="stylesheet" href="__STATIC__/resources/layui/css/layui.css" media="all">
+  <link rel="stylesheet" href="__STATIC__/resources/css/style.css">
+</head>
+<body style="height:100%;overflow:scroll" class="layui-layout-body">
+<div class="layui-layout">
+  <!-- 内容主体区域 -->
+  <div style="padding: 15px;">
+    <div class="breadcrumb">
+        <span class="layui-breadcrumb">
+          <a><cite>管理员管理</cite></a>
+          <a><cite>角色功能管理</cite></a>
+        </span>
+    </div>
+    <div class="demoTable">
+      <a target="rightContent" href="{:url('admin/admin/addadmin')}"
+         class="layui-btn layui-btn-normal iconfont icon-tianjia">添加</a>
+      <button class="layui-btn layui-btn-danger layui-icon layui-icon-delete" data-type="delCheckData">删除</button>
+    </div>
+    <table class="layui-hide" id="role" lay-filter="test"></table>
+
+    <script type="text/html" id="barDemo">
+      <button data-url="{:url('admin/admin/editrole')}" class="layui-btn layui-btn-primary iconfont icon-icon-xiugai" style="color: #236CFF;" lay-event="edit">修改</button>
+      <a class="layui-btn layui-btn-primary layui-icon layui-icon-delete" style="color: #E85141;"
+         lay-event="del">删除</a>
+    </script>
+
+  </div>
+
+</div>
+<script src="__STATIC__/resources/layui/layui.js?t=1554901098009"></script>
+<script>
+  layui.use(['table', 'element'], function () {
+    var element = layui.element;
+    var table = layui.table;
+    table.render({
+      elem: '#role',
+      url: "{:url('admin/role')}",
+      method:'post',
+      height: 'full-130',
+      parseData: function(res) { //res 即为原始返回的数据
+        var data=JSON.parse(res);
+
+        return {
+          "code": data.code, //解析接口状态
+          // "msg": res.message, //解析提示文本
+          "count": data.count, //解析数据长度
+          "data": data.data, //解析数据列表
+        };
+      },
+      title: '用户数据表',
+      cols: [[
+        {checkbox: true, fixed: true},
+        {field: 'power_id', title: '权限ID', width: 80, fixed: 'left', sort: true,},
+        {field: 'power_name', title: '权限名称', width: 120,},
+        {field: 'route', title: '路由', width: 120},
+        {title: '操作', toolbar: '#barDemo', width: 270}
+      ]],
+      id: 'testReload',
+      page: { //支持传入 laypage 组件的所有参数（某些参数除外，如：jump/elem） - 详见文档
+        layout: ['limit', 'count', 'prev', 'page', 'next', 'skip'], //自定义分页布局
+        //,curr: 5 //设定初始在第 5 页
+        groups: 1, //只显示 1 个连续页码
+        first: false, //不显示首页
+        last: false, //不显示尾页
+      },
+      limit:10,
+    });
+    var $ = layui.$, active = {
+      reload: function () {
+        var demoReload = $('#demoReload');
+
+        //执行重载
+        table.reload('testReload', {
+          page: {
+            curr: 1 //重新从第 1 页开始
+          }
+          , where: {
+            role_name: demoReload.val(),
+          }
+        });
+      },
+      delCheckData: function () {
+        var checkStatus = table.checkStatus('testReload'),
+          data = checkStatus.data;
+        if (data.length > 0) {
+          var ids = '';
+          for (var i = 0; i < data.length; i++) {
+            ids += data[i].id + ',';
+          }
+          layer.confirm('您确认要删除所选条目吗？', function (index) {
+            $.ajax({
+              dataType:'json',
+              type : 'post',
+              url : '/admin/admin/role_pldel',
+              data : {
+                data:data
+              }
+              ,success:function (res) {
+                if(res.code == 1){
+                  layer.msg(res.msg, {
+                    icon: 1,//提示的样式
+                    time: 1000, //1秒关闭（如果不配置，默认是3秒）//设置后不需要自己写定时关闭了，单位是毫秒
+                    end: function () {
+                      location.href = '/admin/admin/role';
+                    }
+                  })
+                }else{
+                  layer.msg('删除失败', {
+                    icon: 2,//提示的样式
+                    time: 1000, //1秒关闭（如果不配置，默认是3秒）//设置后不需要自己写定时关闭了，单位是毫秒
+                  })
+                }
+              }
+            })
+          })
+        } else {
+          layer.msg('请选择要删除的条目！', {icon: 2});
+        }
+      }
+    };
+
+    $('.demoTable').on('click', '.layui-btn', function () {
+      var type = $(this).data('type');
+      active[type] ? active[type].call(this) : '';
+    });
+    //监听单元格编辑
+    table.on('edit(test)', function (obj) {
+      var value = obj.value, //得到修改后的值
+        data = obj.data, //得到所在行所有键值
+        field = obj.field; //得到字段
+    });
+    //监听行工具事件
+    table.on('tool(test)', function (obj) {
+      var data = obj.data;
+      //console.log(obj)
+      if (obj.event === 'del') {
+        layer.confirm('真的删除行么', function (index) {
+          var id = data.power_id
+          $.ajax({
+            dataType:'json',
+            type : 'post',
+            url : 'role_del',
+            data :{id:id}
+          })
+          var layer = layui.layer;
+          layer.msg('删除成功');
+          window.location.href="/admin/admin/role";
+        });
+      } else if (obj.event === 'edit') {
+        var url=$(this).attr("data-url");
+        window.location.href = url + "?power_id=" + data.power_id;
+      } else if (obj.event === 'member') {
+        var url = $(this).attr("data-url");
+        window.location.href = url + "?power_id=" + data.power_id;
+      } else if (obj.event === 'view') {
+        var url = $(this).attr("data-url");
+        window.location.href = url + "?power_id=" + data.power_id;
+      } else if (obj.event === 'allocation') {
+        var url = $(this).attr("data-url");
+        window.location.href = url + "?power_id=" + data.power_id;
+      }
+    });
+  });
+</script>
+</body>
+</html>

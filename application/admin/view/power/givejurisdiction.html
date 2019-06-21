@@ -18,13 +18,16 @@
       top: 2px;
       margin-right: 5px
     }
-    .layui-form-item{
+
+    .layui-form-item {
       margin-bottom: 5px;
     }
-    .layui-form-item.secondary{
+
+    .layui-form-item.secondary {
       margin-left: 50px;
     }
-    .layui-form-label{
+
+    .layui-form-label {
       width: 100px;
       text-align: left;
     }
@@ -36,29 +39,41 @@
   <div style="padding: 15px;">
     <div class="breadcrumb">
         <span class="layui-breadcrumb">
-          <a href="Administrator.html">管理员管理</a>
-          <a href="Administrator.html">角色管理</a>
+          <a href="administrator.html">管理员管理</a>
+          <a href="administrator.html">角色管理</a>
           <a><cite>配置权限</cite></a>
         </span>
     </div>
-    <form class="layui-form" action="{:url('power/add')}" method="post">
+    <form class="layui-form" action="">
       {foreach $power as $val}
-      <div class="layui-form-item">
-        <label class="layui-form-label"  name="p_id[]"  value="{$val['power_id']}">{$val['power_name']}</label>
+      <div class="check-area">
+        <div class="layui-form-item first">
+          <label class="layui-form-label">{$val['power_name']}</label>
+          <div class="layui-input-block parent">
+            <!--<input type="checkbox" name="{$val['route']}" lay-skin="switch" lay-filter="switchTest" lay-text="ON|OFF">-->
+          </div>
 
-        <div class="layui-input-block">
-          <input type="checkbox"  data-id="{$val['power_id']}" name="p_id[]"  value="{$val['power_id']}" lay-skin="switch" lay-filter="switchTest" lay-text="ON|OFF">
         </div>
+        {foreach $val['sub'] as $v}
+        <div class="layui-form-item secondary">
 
-      </div>
-      {foreach $val['sub'] as $v}
-      <div class="layui-form-item secondary">
-        <label class="layui-form-label" name="p_id[]"  value="{$v['power_id']}">{$v['power_name']}</label>
-        <div class="layui-input-block">
-          <input type="checkbox" name="p_id[]"  value="{$v['power_id']}"  lay-skin="switch" lay-filter="switchTest" lay-text="ON|OFF">
+          <label class="layui-form-label">{$v['power_name']}</label>
+          <div class="layui-input-block child">
+
+            {if in_array($v['route'],$user)}
+            <input type="checkbox" checked  name="{$v['route']}" lay-skin="switch" lay-filter="switchTest" lay-text="ON|OFF">
+            {else/}
+            <input type="checkbox"  name="{$v['route']}" lay-skin="switch" lay-filter="switchTest" lay-text="ON|OFF">
+            {/if}
+
+
+
+          </div>
+
         </div>
+        {/foreach}
       </div>
-      {/foreach}
+
       {/foreach}
       <div class="layui-form-item">
         <div class="layui-input-block">
@@ -71,35 +86,40 @@
 </div>
 <script src="__STATIC__/resources/layui/layui.js?t=1554901098009"></script>
 <script>
-  layui.use(['element','form'], function () {
+  layui.use(['element', 'form'], function () {
     var $ = layui.$,
-            element = layui.element,
-            form = layui.form;
-    //监听指定开关
-    form.on('switch(switchTest)', function(data){
-      layer.msg('开关：'+ (this.checked ? 'true' : 'false'), {
-        offset: '6px'
+      element = layui.element,
+      form = layui.form;
+
+    form.on('submit(formDemo)', function (data) {
+      var str = "";
+      for (var item in data.field) {
+        str += item + ',';
+      }
+      $.ajax({
+        url: "{:url('power/add')}",
+        type: 'post',
+        data: {data: str,adamin_id:{$admin_id}},
+        dataType: "json",
+        success: function (res) {
+
+          if (res.code === 1) {
+
+            layer.msg('添加成功', {
+              icon: 1,//提示的样式
+              time: 1000, //1秒关闭（如果不配置，默认是3秒）//设置后不需要自己写定时关闭了，单位是毫秒
+              end: function () {
+                location.href = '/admin/power/administrator';
+              }
+            })
+          } else {
+            layer.msg(res.msg, {icon: 2})
+          }
+        }
       });
+      return false;
     });
-    // form.on('submit(formDemo)', function(data){
-    //   layer.msg(JSON.stringify(data.field));
-    //   var dataid = $('#psss').attr('data-id');
-    //   console.log(data);
-    //   $.ajax({
-    //     url:"{:url('power/add')}",
-    //     type:'post',
-    //     data:{data:JSON.stringify(data.field)},
-    //     success:function(res){
-    //       console.log(res);
-    //       // if (res.status == 1){
-    //       //   window.location="{:url('console/console/index')}";
-    //       // }else{
-    //       //   alert(res.message);
-    //       // }
-    //     }
-    //   });
-    //   return false;
-    // });
+
   });
 </script>
 </body>

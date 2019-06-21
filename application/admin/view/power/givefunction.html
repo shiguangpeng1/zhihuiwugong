@@ -31,64 +31,26 @@
         </span>
     </div>
 
-    <form class="layui-form" action="##">
+    <form class="layui-form" action="{:url('power/addmto')}" method="post">
 
       <div class="layui-form-item">
-        <label class="layui-form-label">人事管理</label>
-        <div class="layui-input-block">
-          <input type="checkbox" name="personnel" lay-skin="switch" lay-filter="switchTest" lay-text="ON|OFF">
-        </div>
-      </div>
+        {foreach $power as $val}
+        <label class="layui-form-label" name="p_id[]"  value="{$val['power_id']}">{$val['power_name']}</label>
 
+        <div class="layui-input-block">
+          <input type="checkbox"   data-id="{$val['power_id']}" name="p_id[]"  value="{$val['power_id']}" lay-skin="switch" lay-filter="switchTest" lay-text="ON|OFF">
+        </div>
+      </div>
+      {foreach $val['sub'] as $v}
       <div class="layui-form-item secondary">
-        <label class="layui-form-label">添加</label>
+        <label class="layui-form-label" name="p_id[]"  value="{$v['power_id']}">{$v['power_name']}</label>
         <div class="layui-input-block">
-          <input type="checkbox" name="p_add"  lay-skin="switch" lay-filter="switchTest" lay-text="ON|OFF">
+          <input type="checkbox" name="p_id[]"  value="{$v['power_id']}"  lay-skin="switch" lay-filter="switchTest" lay-text="ON|OFF">
         </div>
       </div>
-      <div class="layui-form-item secondary">
-        <label class="layui-form-label">删除</label>
-        <div class="layui-input-block">
-          <input type="checkbox" name="p_del"  lay-skin="switch" lay-filter="switchTest" lay-text="ON|OFF">
-        </div>
-      </div>
-      <div class="layui-form-item secondary">
-        <label class="layui-form-label">导出</label>
-        <div class="layui-input-block">
-          <input type="checkbox" name="p_output"  lay-skin="switch" lay-filter="switchTest" lay-text="ON|OFF">
-        </div>
-      </div>
-      <div class="layui-form-item secondary">
-        <label class="layui-form-label">导入</label>
-        <div class="layui-input-block">
-          <input type="checkbox" name="p_inside"  lay-skin="switch" lay-filter="switchTest" lay-text="ON|OFF">
-        </div>
-      </div>
-      <div class="layui-form-item">
-        <label class="layui-form-label">财务管理</label>
-        <div class="layui-input-block">
-          <input type="checkbox" name="finance" lay-skin="switch" lay-filter="switchTest" lay-text="ON|OFF">
-        </div>
-      </div>
-      <div class="layui-form-item secondary">
-        <label class="layui-form-label">添加</label>
-        <div class="layui-input-block">
-          <input type="checkbox" name="rf_add"  lay-skin="switch" lay-filter="switchTest" lay-text="ON|OFF">
-        </div>
-      </div>
-      <div class="layui-form-item secondary">
-        <label class="layui-form-label">删除</label>
-        <div class="layui-input-block">
-          <input type="checkbox" name="f_del"  lay-skin="switch" lay-filter="switchTest" lay-text="ON|OFF">
-        </div>
-      </div>
+      {/foreach}
 
-      <div class="layui-form-item secondary">
-        <label class="layui-form-label">导入</label>
-        <div class="layui-input-block">
-          <input type="checkbox" name="f_inside"  lay-skin="switch" lay-filter="switchTest" lay-text="ON|OFF">
-        </div>
-      </div>
+      {/foreach}
       <div class="layui-form-item">
         <div class="layui-input-block">
           <button class="layui-btn" lay-submit lay-filter="formDemo">立即提交</button>
@@ -110,23 +72,23 @@
         offset: '6px'
       });
     });
-    form.on('submit(formDemo)', function(data){
-      layer.msg(JSON.stringify(data.field));
-        $.ajax({
-          url:"{:url('power/add')}",
-          type:'post',
-          data:data.field,
-          success:function(res){
-            console.log(res);
-            // if (res.status == 1){
-            //   window.location="{:url('console/console/index')}";
-            // }else{
-            //   alert(res.message);
-            // }
-          }
-        });
-      return false;
-    });
+    // form.on('submit(formDemo)', function(data){
+    //   layer.msg(JSON.stringify(data.field));
+    //     // $.ajax({
+    //     //   url:"{:url('power/add')}",
+    //     //   type:'post',
+    //     //   data:data.field,
+    //     //   success:function(res){
+    //     //     console.log(res);
+    //     //     // if (res.status == 1){
+    //     //     //   window.location="{:url('console/console/index')}";
+    //     //     // }else{
+    //     //     //   alert(res.message);
+    //     //     // }
+    //     //   }
+    //     // });
+    //   return false;
+    // });
   });
 </script>
 </body>

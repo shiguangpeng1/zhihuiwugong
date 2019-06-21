@@ -7,10 +7,12 @@
   <link rel="stylesheet" href="__STATIC__/resources/layui/css/layui.css" media="all">
   <link rel="stylesheet" href="__STATIC__/resources/css/style.css">
   <style>
-    .layui-table-header .layui-table-cell{
+    .layui-table-header .layui-table-cell {
       white-space: normal;
       line-height: 1.5;
     }
+    .layui-table-box{overflow: visible}
+    /*.layui-table-fixed .layui-table-body{overflow: visible}*/
   </style>
 </head>
 <body style="height:100%;overflow:scroll" class="layui-layout-body">
@@ -24,27 +26,13 @@
         </span>
     </div>
     <div class="demoTable">
-      <div style="margin-bottom: 10px">
-
-        员工姓名：
-        <div class="layui-inline">
-          <input class="layui-input" name="name" id="name" autocomplete="off">
-        </div>
-        身份证号码：
-        <div class="layui-inline">
-          <input class="layui-input" name="idnumber" id="idnumber" autocomplete="off">
-        </div>
-        日期：
-        <div class="layui-inline">
-          <input class="layui-input" name="date" id="date" autocomplete="off">
-        </div>
-        <button class="layui-btn layui-btn-normal layui-icon layui-icon-search" data-type="search">搜索</button>
-      </div>
       <button id="upLoadFile" class="layui-btn layui-btn-normal iconfont icon-tianjia">批量导入</button>
 
-      <a class="layui-btn layui-btn-normal iconfont icon-tianjia" href="{:url('personnel/export')}" data-type="downLoad">批量导出</a>
+      <a class="layui-btn layui-btn-normal iconfont icon-daochu" href="{:url('Excel/out_per')}" data-type="downLoad">批量导出</a>
 
-      <button class="layui-btn layui-btn-normal iconfont icon-tianjia"  data-type="add">添加</button>
+      <button class="layui-btn layui-btn-normal iconfont icon-tianjia" data-type="add">添加</button>
+      <button class="layui-btn layui-btn-normal iconfont icon-shangchuan" data-type="submitAll">批量提交</button>
+      <button class="layui-btn layui-btn-normal layui-icon layui-icon-refresh" data-type="refresh">刷新</button>
     </div>
     <table class="layui-hide" id="mytable" lay-filter="test"></table>
     <script type="text/html" id="toolbarDemo">
@@ -59,29 +47,137 @@
 </div>
 <script src="__STATIC__/resources/layui/layui.js?t=1554901098009"></script>
 <script>
-  layui.use(['table', 'element','upload'], function () {
+  layui.use(['table', 'element', 'upload','form'], function () {
     var element = layui.element;
     var table = layui.table;
-    var upload=layui.upload;
+    var upload = layui.upload;
+    var form = layui.form;
+    var type=0;
+    var loading=null;
     upload.render({ //允许上传的文件后缀
       elem: '#upLoadFile',
-      url: "{:url('personnel/add')}",
+      url: "{:url('Excel/up_per')}",
       accept: 'file', //excel文件
-      exts: 'xls|xlsx', //允许上传的文件后缀名
-      done: function(res){
-        console.log(res);
-      table.reload('testReload');
+      data:{
+        type:type
+      },
+      exts: 'xlsx|xls', //允许上传的文件后缀名
+      before:function(){
+        loading=layer.msg('上传中', {
+          icon: 16
+          ,shade: 0.01
+        });
+      },
+      done: function (res) {
+        layer.close(loading);
+        loading=null;
+        if (res.code === 1) {
+          layer.msg(res.msg, {icon: 1});
+          table.reload('testReload');
+        }else if(res.code===2){
+
+          layer.confirm(res.msg,{icon:3,title:'警告！',btn:['跳过','重复导入']},
+            function (index) {
+              load=layer.msg('上传中', {
+                icon: 16
+                ,shade: 0.01
+              });
+            type=1;
+            $.ajax({
+              type:"post",
+              url:"{:url('Excel/up_per')}",
+              dataType:'json',
+              data:{
+                type:1
+              },
+              success:function (res) {
+                if(res.code===1){
+                  layer.msg(res.msg, {icon: 1});
+
+                  table.reload('testReload');
+                }else{
+                  layer.msg(res.msg, {icon: 2});
+                }
+              },
+              complete:function () {
+                layer.close(loading);
+                loading=null;
+              }
+            });
+            layer.close(index)
+          },function (index) {
+              load=layer.msg('上传中', {
+                icon: 16
+                ,shade: 0.01
+              });
+              $.ajax({
+                type:"post",
+                url:"{:url('Excel/up_per')}",
+                dataType:'json',
+                data:{
+                  type:2
+                },
+                success:function (res) {
+                  if(res.code===1){
+                    layer.msg(res.msg, {icon: 1});
+
+                    table.reload('testReload');
+                  }else{
+                    layer.msg(res.msg, {icon: 2});
+                  }
+                },
+                complete:function () {
+                  layer.close(loading);
+                  loading=null;
+                }
+              });
+              layer.close(index)
+          })
+        }else if(res.code===0){
+          layer.msg(res.msg, {icon: 2});
+        }
+
       }
     });
+    //日期格式化
+    var formatDate=function(date){
+      if(date===''){
+        return '';
+      }else{
+        function add0(m) {
+          return m < 10 ? '0' + m : m
+        }
+
+        let time = new Date(date * 1000);
+        let y = time.getFullYear();
+        let m = time.getMonth() + 1;
+        let d = time.getDate();
+        return y + '-' + add0(m) + '-' + add0(d);
+      }
+    };
+
     table.render({
       elem: '#mytable',
       url: "{:url('personnel/personnel')}",
-      toolbar: '#toolbarDemo',
+      // toolbar: '#toolbarDemo',
       title: '用户数据表',
-      method:'post',
-      parseData: function(res) { //res 即为原始返回的数据
-        var data=JSON.parse(res);
-        //console.log(data.data)
+      height:'full-120',
+      method: 'post',
+      parseData: function (res) { //res 即为原始返回的数据
+        var data = JSON.parse(res);
+        var len=data.data.length;
+        for(var i=0;i<len;i++){
+
+          data.data[i].indate=formatDate(data.data[i].indate);
+          data.data[i].livedate=formatDate(data.data[i].livedate);
+          data.data[i].socialsecuritybegin=formatDate(data.data[i].socialsecuritybegin);
+          data.data[i].socialsecuritystop=formatDate(data.data[i].socialsecuritystop);
+          data.data[i].accumulationfundbegin=formatDate(data.data[i].accumulationfundbegin);
+          data.data[i].accumulationfundstop=formatDate(data.data[i].accumulationfundstop);
+          data.data[i].birthday=formatDate(data.data[i].birthday);
+          data.data[i].contractbegin=formatDate(data.data[i].contractbegin);
+          data.data[i].contractend=formatDate(data.data[i].contractend);
+        }
         return {
           "code": data.code, //解析接口状态
           // "msg": res.message, //解析提示文本
@@ -89,71 +185,124 @@
           "data": data.data, //解析数据列表
         };
       },
+      done: function (res, curr, count) {
+        count || this.elem.next('.layui-table-view').find('.layui-table-header').css('overflow', 'auto');
+        layui.each($('.tabSelect'), function (index, item) {
+          var elem = $(item);
+          elem.val(elem.data('value')).parents('div.layui-table-cell').css('overflow', 'visible');
+        });
+        form.render();
+      },
       cols: [[
-        {checkbox: true, fixed: true,rowspan:2},
-        {align: 'center',field: 'query_id', title: 'ID', width: 80, fixed: 'left', sort: true,rowspan:2},
-        {align: 'center', title: '员工基本信息', colspan: 21},
-        {align: 'center', title: '联络方式', colspan: 5},
+        {checkbox: true, fixed: true, rowspan: 2},
+        {align: 'center', title: '员工基本信息', colspan: 22},
+        {align: 'center', title: '联络方式', colspan: 4},
         {align: 'center', title: '银行卡', colspan: 2},
         {align: 'center', title: '合同必填项', colspan: 5},
         {align: 'center', title: '入职档案', colspan: 16},
-        {align: 'center',title: '操作', toolbar: '#barDemo', width: 126,rowspan:2}
+        {align: 'center', title: '操作', toolbar: '#barDemo', width: 126, rowspan: 2}
       ],
         [
           //员工基本信息
-          {align: 'center',field: 'fn', title: '档案号', width: 120,edit:true},
-          {align: 'center',field: 'site', title: '项目点名称', width: 120,edit:true},
-          {align: 'center',field: 'name', title: '员工姓名', width: 120,edit:true},
-          {align: 'center',field: 'indate', title: '入职日期', width: 120,edit:true},
-          {align: 'center',field: 'livedate', title: '离职日期', width: 120,edit:true},
-          {align: 'center',field: 'salary', title: '基本工资', width: 120,edit:true},
-          {align: 'center',field: 'insurance', title: '保险险种', width: 120,edit:true},
-          {align: 'center',field: 'socialsecuritybegin', title: '社保起缴月份', width: 120,edit:true},
-          {align: 'center',field: 'socialsecuritystop', title: '社保停缴月份', width: 120,edit:true},
-          {align: 'center',field: 'accumulationfundcity', title: '公积金缴纳城市', width: 140,edit:true},
-          {align: 'center',field: 'accumulationfundbegin', title: '公积金起缴月份', width: 140,edit:true},
-          {align: 'center',field: 'accumulationfundstop', title: '公积金停纳缴份', width: 140,edit:true},
-          {align: 'center',field: 'accumulationfundremarks', title: '社保公积金备注', width: 140,edit:true},
-          {align: 'center',field: 'station', title: '岗位', width: 120,edit:true},
-          {align: 'center',field: 'idnumber', title: '身份证号码', width: 120,edit:true},
-          {align: 'center',field: 'birthday', title: '出生日期', width: 120,edit:true},
-          {align: 'center',field: 'age', title: '年龄', width: 120,edit:true},
-          {align: 'center',field: 'sex', title: '性别', width: 120,edit:true},
-          {align: 'center',field: 'issite', title: '户籍地址', width: 120,edit:true},
-          {align: 'center',field: 'nowsite', title: '现居住地址', width: 120,edit:true},
-          {align: 'center',field: 'workstatus', title: '用工形式', width: 120,edit:true},
+          {align: 'center', field: 'fn', title: '档案号', width: 120, edit: true, fixed: 'left'},
+          {align: 'center', field: 'site', title: '项目点名称', width: 120, fixed: 'left' ,templet: function (obj) {
+              return '<select class="tabSelect" name="site" lay-filter="testSelect" lay-verify="required" value="'+obj.site+'" data-value="'+obj.site+'">{foreach $sites as $v}'+' <option class="ids" value="{$v['por_name']}">{$v['por_name']}</option>{/foreach} </select>';
+            }},
+          {align: 'center', field: 'name', title: '员工姓名', width: 120, edit: true, fixed: 'left'},
+          {align: 'center', field: 'indate', title: '入职日期', width: 120, edit: true},
+          {align: 'center', field: 'livedate', title: '离职日期', width: 120, edit: true},
+          {align: 'center', field: 'sfzz', title: '是否在职', width: 120,templet: function (obj) {
+              return '<select class="tabSelect" name="sfzz" lay-filter="testSelect" lay-verify="required" data-value="'+obj.sfzz+'"><option class="ids" value="是" >是</option><option class="ids" value="否" >否</option></select>';
+            }},
+          {align: 'center', field: 'salary', title: '基本工资', width: 120, edit: true},
+          {align: 'center', field: 'insurance', title: '保险险种', width: 120,templet: function (obj) {
+              return '<select class="tabSelect" name="insurance" lay-filter="testSelect" lay-verify="required" data-value="'+obj.insurance+'">{foreach $insurance as $v}'+' <option class="ids" value="{$v['insurance_name']}">{$v['insurance_name']}</option>{/foreach} </select>';
+            }},
+          {align: 'center', field: 'socialsecuritybegin', title: '社保起缴月份', width: 120, edit: true},
+          {align: 'center', field: 'socialsecuritystop', title: '社保停缴月份', width: 120, edit: true},
+          {align: 'center', field: 'accumulationfundcity', title: '公积金缴纳城市', width: 140,templet: function (obj) {
+              return '<select class="tabSelect" name="accumulationfundcity" lay-filter="testSelect" lay-verify="required" data-value="'+obj.accumulationfundcity+'">{foreach $fund as $v}'+' <option class="ids" value="{$v['fund_name']}">{$v['fund_name']}</option>{/foreach} </select>';
+            }},
+          {align: 'center', field: 'accumulationfundbegin', title: '公积金起缴月份', width: 140, edit: true,},
+          {align: 'center', field: 'accumulationfundstop', title: '公积金停纳缴月份', width: 140, edit: true},
+          {align: 'center', field: 'accumulationfundremarks', title: '社保公积金备注', width: 140, edit: true},
+          {align: 'center', field: 'station', title: '岗位', width: 120, edit: true},
+          {align: 'center', field: 'idnumber', title: '身份证号码', width: 200, event: 'inputID'},
+          {align: 'center', field: 'birthday', title: '出生日期', width: 120},
+          {align: 'center', field: 'age', title: '年龄', width: 120},
+          {align: 'center', field: 'sex', title: '性别', width: 120},
+          {align: 'center', field: 'issite', title: '户籍地址', width: 340, edit: true},
+          {align: 'center', field: 'nowsite', title: '现居住地址', width: 340, edit: true},
+          {align: 'center', field: 'workstatus', title: '用工形式', width: 120, edit: true},
           //联络方式
-          {align: 'center',field: 'nowsitex', title: '现住地址', width: 120,edit:true},
-          {align: 'center',field: 'mobile', title: '联系方式', width: 120,edit:true},
-          {align: 'center',field: 'urgency', title: '紧急联系人', width: 120,edit:true},
-          {align: 'center',field: 'urgencyrelation', title: '与紧急联系人的关系', width: 160,edit:true},
-          {align: 'center',field: 'urgencymobile', title: '紧急联系人电话', width: 140,edit:true},
+          {align: 'center', field: 'mobile', title: '联系方式', width: 120, edit: true},
+          {align: 'center', field: 'urgency', title: '紧急联系人', width: 120, edit: true},
+          {align: 'center', field: 'urgencyrelation', title: '与紧急联系人的关系', width: 160, edit: true},
+          {align: 'center', field: 'urgencymobile', title: '紧急联系人电话', width: 140, edit: true},
           //银行卡
-          {align: 'center',field: 'bankname', title: '代发银行', width: 140,edit:true},
-          {align: 'center',field: 'banknumber', title: '银行卡号', width: 140,edit:true},
+          {align: 'center', field: 'bankname', title: '代发银行', width: 140,templet: function (obj) {
+              return '<select class="tabSelect" name="bankname" lay-filter="testSelect" lay-verify="required" data-value="'+obj.bankname+'">{foreach $bankname as $v}'+' <option class="ids" value="{$v['bank_name']}">{$v['bank_name']}</option>{/foreach} </select>';
+            }},
+          {align: 'center', field: 'banknumber', title: '银行卡号', width: 180, edit: true},
           //合同必填项
-          {align: 'center',field: 'contracttype', title: '合同类型', width: 140,edit:true},
-          {align: 'center',field: 'contractstatus', title: '是否签订', width: 140,edit:true},
-          {align: 'center',field: 'contractbegin', title: '合同开始时间', width: 140,edit:true},
-          {align: 'center',field: 'contractend', title: '合同结束时间', width: 140,edit:true},
-          {align: 'center',field: 'contractremark', title: '合同备注', width: 140,edit:true},
+          {align: 'center', field: 'contracttype', title: '合同类型', width: 140,templet: function (obj) {
+              return '<select class="tabSelect" name="contracttype" lay-filter="testSelect" lay-verify="required" data-value="'+obj.contracttype+'">{foreach $contract as $v}'+' <option class="ids" value="{$v['contract_name']}">{$v['contract_name']}</option>{/foreach} </select>';
+            }},
+          {align: 'center', field: 'contractstatus', title: '是否签订', width: 140,templet: function (obj) {
+              return '<select class="tabSelect" name="contractstatus" lay-filter="testSelect" lay-verify="required" data-value="' + obj.contractstatus + '"><option class="ids" value="是" >是</option><option class="ids" value="否" >否</option></select>';
+            }},
+          {align: 'center', field: 'contractbegin', title: '合同开始时间', width: 140, edit: true},
+          {align: 'center', field: 'contractend', title: '合同结束时间', width: 140, edit: true},
+          {align: 'center', field: 'contractremark', title: '合同备注', width: 140, edit: true},
           //入职档案
-          {align: 'center',field: 'idcopy', title: '身份证复印件', width: 100,edit:true},
-          {align: 'center',field: 'bankcardcopy', title: '银行卡复印件', width: 100,edit:true},
-          {align: 'center',field: 'staffentry', title: '员工入职材料清单', width: 100,edit:true},
-          {align: 'center',field: 'confirmation', title: '乙方确认函', width: 100,edit:true},
-          {align: 'center',field: 'social', title: '社保承诺书', width: 100,edit:true},
-          {align: 'center',field: 'haining', title: '海宁缴保声明', width: 100,edit:true},
-          {align: 'center',field: 'hourlyworke', title: '小时工声明', width: 100,edit:true},
-          {align: 'center',field: 'statement', title: '员工需求表', width: 100,edit:true},
-          {align: 'center',field: 'interview ', title: '面试记录表', width: 100,edit:true},
-          {align: 'center',field: 'job', title: '工作申请表', width: 100,edit:true},
-          {align: 'center',field: 'employee', title: '员工手册B类签收单', width: 100,edit:true},
-          {align: 'center',field: 'directory', title: '员工档案目录', width: 100,edit:true},
-          {align: 'center',field: 'registration', title: '基层员工登记表', width: 100,edit:true},
-          {align: 'center',field: 'training', title: '培训反馈表', width: 100,edit:true},
-          {align: 'center',field: 'instructions', title: '员工须知', width: 100,edit:true},
-          {align: 'center',field: 'agreement', title: '上岗协议', width: 100,edit:true},
+          {align: 'center', field: 'idcopy', title: '身份证复印件', width: 100, templet: function (obj) {
+              return '<select class="tabSelect" name="idcopy" lay-filter="testSelect" lay-verify="required" data-value="'+obj.idcopy+'"><option class="ids" value="是" >是</option><option class="ids" value="否" >否</option></select>';
+            }},
+          {align: 'center', field: 'bankcardcopy', title: '银行卡复印件', width: 100, templet: function (obj) {
+              return '<select class="tabSelect" name="bankcardcopy" lay-filter="testSelect" lay-verify="required" data-value="'+obj.bankcardcopy+'"><option class="ids" value="是" >是</option><option class="ids" value="否" >否</option></select>';
+            }},
+          {align: 'center', field: 'staffentry', title: '员工入职材料清单', width: 100, templet: function (obj) {
+              return '<select class="tabSelect" name="staffentry" lay-filter="testSelect" lay-verify="required" data-value="' + obj.staffentry + '"><option class="ids" value="是" >是</option><option class="ids" value="否" >否</option></select>';
+            }},
+          {align: 'center', field: 'confirmation', title: '乙方确认函', width: 100,templet: function (obj) {
+              return '<select class="tabSelect" name="confirmation" lay-filter="testSelect" lay-verify="required" data-value="' + obj.confirmation + '"><option class="ids" value="是" >是</option><option class="ids" value="否" >否</option></select>';
+            }},
+          {align: 'center', field: 'social', title: '社保承诺书', width: 100,templet: function (obj) {
+              return '<select class="tabSelect" name="social" lay-filter="testSelect" lay-verify="required" data-value="' + obj.social + '"><option class="ids" value="是" >是</option><option class="ids" value="否" >否</option></select>';
+            }},
+          {align: 'center', field: 'haining', title: '海宁缴保声明', width: 100,templet: function (obj) {
+              return '<select class="tabSelect" name="haining" lay-filter="testSelect" lay-verify="required" data-value="' + obj.haining + '"><option class="ids" value="是" >是</option><option class="ids" value="否" >否</option></select>';
+            }},
+          {align: 'center', field: 'hourlyworke', title: '小时工声明', width: 100,templet: function (obj) {
+              return '<select class="tabSelect" name="hourlyworke" lay-filter="testSelect" lay-verify="required" data-value="' + obj.hourlyworke + '"><option class="ids" value="是" >是</option><option class="ids" value="否" >否</option></select>';
+            }},
+          {align: 'center', field: 'statement', title: '员工需求表', width: 100,templet: function (obj) {
+              return '<select class="tabSelect" name="statement" lay-filter="testSelect" lay-verify="required" data-value="' + obj.statement + '"><option class="ids" value="是" >是</option><option class="ids" value="否" >否</option></select>';
+            }},
+          {align: 'center', field: 'interview ', title: '面试记录表', width: 100,templet: function (obj) {
+              return '<select class="tabSelect" name="interview" lay-filter="testSelect" lay-verify="required" data-value="' + obj.interview + '"><option class="ids" value="是" >是</option><option class="ids" value="否" >否</option></select>';
+            }},
+          {align: 'center', field: 'job', title: '工作申请表', width: 100,templet: function (obj) {
+              return '<select class="tabSelect" name="job" lay-filter="testSelect" lay-verify="required" data-value="' + obj.job + '"><option class="ids" value="是" >是</option><option class="ids" value="否" >否</option></select>';
+            }},
+          {align: 'center', field: 'employee', title: '员工手册B类签收单', width: 100,templet: function (obj) {
+              return '<select class="tabSelect" name="employee" lay-filter="testSelect" lay-verify="required" data-value="' + obj.employee + '"><option class="ids" value="是" >是</option><option class="ids" value="否" >否</option></select>';
+            }},
+          {align: 'center', field: 'directory', title: '员工档案目录', width: 100,templet: function (obj) {
+              return '<select class="tabSelect" name="directory" lay-filter="testSelect" lay-verify="required" data-value="' + obj.directory + '"><option class="ids" value="是" >是</option><option class="ids" value="否" >否</option></select>';
+            }},
+          {align: 'center', field: 'registration', title: '基层员工登记表', width: 100,templet: function (obj) {
+              return '<select class="tabSelect" name="registration" lay-filter="testSelect" lay-verify="required" data-value="' + obj.registration + '"><option class="ids" value="是" >是</option><option class="ids" value="否" >否</option></select>';
+            }},
+          {align: 'center', field: 'training', title: '培训反馈表', width: 100, templet: function (obj) {
+              return '<select class="tabSelect" name="training" lay-filter="testSelect" lay-verify="required" data-value="' + obj.training + '"><option class="ids" value="是" >是</option><option class="ids" value="否" >否</option></select>';
+            }},
+          {align: 'center', field: 'instructions', title: '员工须知', width: 100,templet: function (obj) {
+              return '<select class="tabSelect" name="instructions" lay-filter="testSelect" lay-verify="required" data-value="' + obj.instructions + '"><option class="ids" value="是" >是</option><option class="ids" value="否" >否</option></select>';
+            }},
+          {align: 'center', field: 'agreement', title: '上岗协议', width: 100,templet: function (obj) {
+              return '<select class="tabSelect" name="agreement" lay-filter="testSelect" lay-verify="required" data-value="' + obj.agreement + '"><option class="ids" value="是" >是</option><option class="ids" value="否" >否</option></select>';
+            }},
         ]],
       id: 'testReload',
       page: { //支持传入 laypage 组件的所有参数（某些参数除外，如：jump/elem） - 详见文档
@@ -165,12 +314,24 @@
 
       }
     });
+
+    // 监听修改update到表格中
+    form.on('select(testSelect)', function (data) {
+      // debugger;
+      var elem = $(data.elem);
+      var trElem = elem.parents('tr');
+
+      var tableData = table.cache['testReload'];
+      // 更新到表格的缓存数据中，才能在获得选中行等等其他的方法中得到更新之后的值
+      tableData[trElem.data('index')][elem.attr('name')] = data.value;
+      // 其他的操作看需求 TODO
+    });
     var $ = layui.$, active = {
       //搜索
       search: function () {
         var name = $('#name');
         var idnumber = $('#idnumber');
-        var date = $('#date');
+        var indate = $('#date');
 
         //执行重载
         table.reload('testReload', {
@@ -180,29 +341,57 @@
           , where: {
             name: name.val(),
             idnumber: idnumber.val(),
-            date: date.val(),
+            indate: indate.val(),
           }
         });
       },
-      // downLoad: function () {
-      //   $.ajax({
-      //     url:"{:url('personnel/export')}",
-      //     type:'post',
-      //     success:function(res){
-      //       console.log(res)
-      //     }
-      //
-      //   });
-      //
-      // },
-      //添加
-      add:function(obj){
-        var data=table.cache.testReload;
+      //批量提交
+      submitAll: function () {
+        var checkStatus = table.checkStatus('testReload'),
+          arr = checkStatus.data;
+        var load=null;
+        if (arr.length > 0) {
+          layer.confirm('您确认要提交所选条目吗？', function (index) {
 
-        table.reload('testReload',{
-          parseData: function(res) { //res 即为原始返回的数据
-            var data=JSON.parse(res);
-            var arr=data.data;
+            layer.close(index);
+            load=layer.msg('提交中', {
+              icon: 16
+              ,shade: 0.01
+            });
+            $.ajax({
+              url:"{:url('personnel/addto')}",
+              type:'post',
+              dataType:'json',
+              data:{data:arr},
+              success:function(res){
+
+                if (res.code===1){
+                  table.reload('testReload');
+                  layer.msg(res.msg, {icon: 1});
+                } else{
+
+                  layer.msg(res.msg, {icon:2});
+                }
+              },
+              complete:function () {
+                layer.close(load);
+                load=null
+              }
+            });
+
+          })
+        } else {
+          layer.msg('请选择要提交的条目！', {icon: 2});
+        }
+      },
+      //添加
+      add: function (obj) {
+        var data = table.cache.testReload;
+
+        table.reload('testReload', {
+          parseData: function (res) { //res 即为原始返回的数据
+            var data = JSON.parse(res);
+            var arr = data.data;
             arr.unshift({});
             return {
               "code": data.code, //解析接口状态
@@ -213,6 +402,10 @@
           },
         })
       },
+      //刷新
+      refresh:function () {
+        window.location.reload();
+      }
     };
 
     $('.demoTable').on('click', '.layui-btn', function () {
@@ -220,32 +413,89 @@
       active[type] ? active[type].call(this) : '';
     });
 
+    function IdCard(UUserCard, num) {
+      if (num === 1) {
+        //获取出生日期
+        birth = UUserCard.substring(6, 10) + "-" + UUserCard.substring(10, 12) + "-" + UUserCard.substring(12, 14);
+        return birth;
+      }
+      if (num === 2) {
+        //获取性别
+        if (parseInt(UUserCard.substr(16, 1)) % 2 == 1) {
+          //男
+          return "男";
+        } else {
+          //女
+          return "女"
+        }
+      }
+      if (num === 3) {
+        //获取年龄
+        var myDate = new Date();
+        var month = myDate.getMonth() + 1;
+        var day = myDate.getDate();
+        var age = myDate.getFullYear() - UUserCard.substring(6, 10);
+        if (UUserCard.substring(10, 12) < month || UUserCard.substring(10, 12) == month && UUserCard.substring(12, 14) <= day) {
+          age++;
+        }
+        return age;
+      }
+    }
+
     //监听行工具事件
     table.on('tool(test)', function (obj) {
       var data = obj.data;
-      // console.log(obj);
       if (obj.event === 'submit') {
-        layer.confirm('你确定要提交该条信息吗？', function (index) {
-          $.ajax({
-            url:"{:url('personnel/dell')}",
-            type:'post',
-            dataType:'json',
-            data:data,
-            success:function(res){
+        if(JSON.stringify(data)=="{}"){
+          layer.msg('请填写内容！', {icon: 2});
+        }else{
+          layer.confirm('你确定要提交该条信息吗？', function (index) {
+            $.ajax({
+              url: "{:url('personnel/addto')}",
+              type: 'post',
+              dataType: 'json',
+              data: {data:[data]},
+              success: function (res) {
 
-              res = JSON.parse(res);
-              // console.log(res);
-              table.reload('testReload');
-              if (res.status==1){
-                table.reload('testReload');
-
-              } else{
-                alert(res.message);
+                if (res.code === 1) {
+                  table.reload('testReload');
+                  layer.msg(res.msg, {icon: 1});
+                } else {
+                  layer.msg(res.msg, {icon: 2});
+                }
+              },
+              complete:function () {
+                layer.close(index);
               }
-            }
+
+            });
 
           });
+        }
+
+      } else if (obj.event === 'inputID') {
+        layer.prompt({
+          formType: 2,
+          title: '修改身份证号',
+          value: data.sign,
+        }, function (value, index) {
           layer.close(index);
+          var ID = value, birthday, age, sex;
+          var reg = /(^\d{15}$)|(^\d{18}$)|(^\d{17}(\d|X|x)$)/;
+          if (reg.test(ID) === false) {
+            layer.msg('请输入合法的身份证号！', {icon: 2});
+          } else {
+            age = IdCard(ID, 3);
+            sex = IdCard(ID, 2);
+            birthday = IdCard(ID, 1);
+            //同步更新表格和缓存对应的值
+            obj.update({
+              idnumber: value,
+              birthday: birthday,
+              age: age,
+              sex: sex
+            });
+          }
         });
       }
     });

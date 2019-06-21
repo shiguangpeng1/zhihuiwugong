@@ -6,6 +6,17 @@
   <title>上海智慧务工-设置</title>
   <link rel="stylesheet" href="__STATIC__/resources/layui/css/layui.css" media="all">
   <link rel="stylesheet" href="__STATIC__/resources/css/style.css">
+  <style>
+    .input-line {
+      width: 560px;
+      margin: 20px auto;
+    }
+
+    .input-line .layui-form-label {
+      width: 160px;
+      font-size: 16px;
+    }
+  </style>
 </head>
 <body style="height:100%;overflow:scroll" class="layui-layout-body">
 <div class="layui-layout">
@@ -14,123 +25,234 @@
     <div class="breadcrumb">
         <span class="layui-breadcrumb">
           <a><cite>管理员管理</cite></a>
-          <a><cite>角色功能管理</cite></a>
+          <a><cite>配置</cite></a>
         </span>
     </div>
-    <div class="demoTable">
-      角色名称：
-      <div class="layui-inline">
-        <input class="layui-input" name="id" id="demoReload" autocomplete="off">
+    <div class="layui-form" id="subForm">
+      <div class="input-line">
+        <div class="layui-form-item">
+          <label class="layui-form-label">项目点管理</label>
+          <div class="layui-input-inline">
+            <select lay-search="">
+              <option value="">选择项目点</option>
+              {foreach $sites as $v}
+              <option value="{$v['pro_id']}">{$v['por_name']}</option>
+              {/foreach}
+            </select>
+          </div>
+          {if $user['status']==2}
+          <button data-url="{:url('admin/sitesdel')}" data-type="del" data-name="por_id"
+                  class="layui-btn layui-btn-danger" lay-filter="demo1">删除项目点
+          </button>
+          {/if}
+        </div>
+
       </div>
-      <button class="layui-btn layui-btn-normal layui-icon layui-icon-search" data-type="reload">搜索</button>
-      <button class="layui-btn layui-btn-normal iconfont icon-tianjia" data-type="reload">添加</button>
-      <button class="layui-btn layui-btn-danger layui-icon layui-icon-delete" data-type="delCheckData">删除</button>
+      <div class="input-line">
+        <div class="layui-form-item">
+          <label class="layui-form-label">项目点添加</label>
+          <div class="layui-input-inline">
+            <input type="text" lay-verify="title" autocomplete="off" placeholder="请输入项目点"
+                   class="layui-input">
+          </div>
+          {if $user['status']==2}
+          <button data-url="{:url('admin/sitesadd')}" data-type="add" data-name="por_name"
+                  class="layui-btn layui-btn-normal" lay-submit="##"
+                  lay-filter="demo1">添加项目点
+          </button>
+          {/if}
+        </div>
+
+      </div>
+      <div class="input-line">
+        <div class="layui-form-item">
+          <label class="layui-form-label">保险险种管理</label>
+          <div class="layui-input-inline">
+            <select lay-search="">
+              <option value="">选择保险险种</option>
+              {foreach $insurance as $v}
+              <option value="{$v['insurance_id']}">{$v['insurance_name']}</option>
+              {/foreach}
+            </select>
+          </div>
+          {if $user['status']==2}
+          <button data-url="{:url('admin/insurancedel')}" data-type="del" data-name="insurance_id"
+                  class="layui-btn layui-btn-danger" lay-filter="demo1">删除保险险种
+          </button>
+          {/if}
+        </div>
+      </div>
+      <div class="input-line">
+        <div class="layui-form-item">
+          <label class="layui-form-label">添加保险险种</label>
+          <div class="layui-input-inline">
+            <input type="text" lay-verify="title" autocomplete="off" placeholder="请输入保险险种"
+                   class="layui-input">
+          </div>
+          {if $user['status']==2}
+          <button data-url="{:url('admin/insuranceadd')}" data-type="add" data-name="insurance_name"
+                  class="layui-btn layui-btn-normal" lay-filter="demo1">添加保险险种
+          </button>
+          {/if}
+        </div>
+      </div>
+      <div class="input-line">
+        <div class="layui-form-item">
+          <label class="layui-form-label">公积金缴纳城市管理</label>
+          <div class="layui-input-inline">
+            <select lay-search="">
+              <option value="">选择公积金缴纳城市</option>
+              {foreach $fund as $v}
+              <option value="{$v['fund_id']}">{$v['fund_name']}</option>
+              {/foreach}
+            </select>
+          </div>
+          {if $user['status']==2}
+          <button data-url="{:url('admin/funddel')}" data-type="del" data-name="fund_id"
+                  class="layui-btn layui-btn-danger" lay-filter="demo1">删除公积金缴纳城市
+          </button>
+          {/if}
+        </div>
+      </div>
+      <div class="input-line">
+        <div class="layui-form-item">
+          <label class="layui-form-label">添加公积金缴纳城市</label>
+          <div class="layui-input-inline">
+            <input type="text" lay-verify="title" autocomplete="off" placeholder="请输入公积金缴纳城市" class="layui-input">
+          </div>
+          {if $user['status']==2}
+          <button data-url="{:url('admin/fundadd')}" data-type="add" data-name="fund_name"
+                  class="layui-btn layui-btn-normal" lay-filter="demo1">添加公积金缴纳城市
+          </button>
+          {/if}
+        </div>
+      </div>
+      <div class="input-line">
+        <div class="layui-form" lay-filter="example">
+          <div class="layui-form-item">
+            <label class="layui-form-label">代发银行管理</label>
+            <div class="layui-input-inline">
+              <select lay-search="">
+                <option value="">选择代发银行</option>
+                {foreach $bankname as $v}
+                <option value="{$v['bank_id']}">{$v['bank_name']}</option>
+                {/foreach}
+              </select>
+            </div>
+            {if $user['status']==2}
+            <button data-url="{:url('admin/backdel')}" data-type="del" data-name="bank_id"
+                    class="layui-btn layui-btn-danger" lay-filter="demo1">删除代发银行
+            </button>
+            {/if}
+          </div>
+
+        </div>
+      </div>
+      <div class="input-line">
+        <div class="layui-form" lay-filter="example">
+          <div class="layui-form-item">
+            <label class="layui-form-label">添加代发银行</label>
+            <div class="layui-input-inline">
+              <input type="text" lay-verify="title" autocomplete="off"
+                     placeholder="请输入代发银行名称"
+                     class="layui-input">
+            </div>
+            {if $user['status']==2}
+            <button data-url="{:url('admin/backadd')}" data-type="add" data-name="back_name"
+                    class="layui-btn layui-btn-normal" lay-filter="demo1">添加代发银行
+            </button>
+            {/if}
+          </div>
+
+        </div>
+      </div>
+      <div class="input-line">
+        <div class="layui-form" lay-filter="example">
+          <div class="layui-form-item">
+            <label class="layui-form-label">合同类型管理</label>
+            <div class="layui-input-inline">
+              <select lay-search="">
+                <option value="">选择合同类型</option>
+                {foreach $contract as $v}
+                <option value="{$v['contract_id']}">{$v['contract_name']}</option>
+                {/foreach}
+              </select>
+            </div>
+            {if $user['status']==2}
+            <button data-url="{:url('admin/contractdel')}" data-type="del" data-name="contract_id"
+                    class="layui-btn layui-btn-danger" lay-filter="demo1">删除合同类型
+            </button>
+            {/if}
+          </div>
+
+        </div>
+      </div>
+      <div class="input-line">
+        <div class="layui-form" lay-filter="example">
+          <div class="layui-form-item">
+            <label class="layui-form-label">添加合同类型</label>
+            <div class="layui-input-inline">
+              <input type="text" name="contract_name" lay-verify="title" autocomplete="off"
+                     placeholder="请输入合同类型名称"
+                     class="layui-input">
+            </div>
+            {if $user['status']==2}
+            <button data-url="{:url('admin/contractadd')}" data-type="add" data-name="contract_name"
+                    class="layui-btn layui-btn-normal" lay-filter="demo1">添加合同类型
+            </button>
+            {/if}
+          </div>
+
+        </div>
+      </div>
+
     </div>
-    <table class="layui-hide" id="mytable" lay-filter="test"></table>
-
-    <script type="text/html" id="barDemo">
-      <button data-url="{:url('admin/power/givefunction')}" class="layui-btn layui-btn-primary iconfont icon-shezhi" style="color: #236CFF;"
-              lay-event="setFun">设置功能</button>
-      <a class="layui-btn layui-btn-primary layui-icon layui-icon-delete" style="color: #E85141;"
-         lay-event="del">删除</a>
-    </script>
-
   </div>
 
 </div>
 <script src="__STATIC__/resources/layui/layui.js?t=1554901098009"></script>
 <script>
-  layui.use(['table', 'element'], function () {
+  layui.use(['table', 'element', 'form', 'layedit'], function () {
     var element = layui.element;
-    var table = layui.table;
-    table.render({
-      elem: '#mytable',
-      url: "{:url('admin/management')}",
-      method:'post',
-      parseData: function(res) { //res 即为原始返回的数据
-        var data=JSON.parse(res)
-        //console.log(data);
-        return {
-          "code": data.code, //解析接口状态
-          // "msg": res.message, //解析提示文本
-          "count": data.count, //解析数据长度
-          "data": data.data, //解析数据列表
-        };
-      },
-      title: '用户数据表',
-      cols: [[
-        {checkbox: true, fixed: true},
-        {field: 'role_id', title: 'ID', width: 80, fixed: 'left', sort: true,},
-        {field: 'role_name', title: '角色名称', width: 120,},
-        {field: 'por_name', title: '管理项目点', width: 120},
-        {title: '操作', toolbar: '#barDemo', width: 270}
-      ]],
-      id: 'testReload',
-      page: { //支持传入 laypage 组件的所有参数（某些参数除外，如：jump/elem） - 详见文档
-        layout: ['limit', 'count', 'prev', 'page', 'next', 'skip'], //自定义分页布局
-        //,curr: 5 //设定初始在第 5 页
-        groups: 1, //只显示 1 个连续页码
-        first: false, //不显示首页
-        last: false, //不显示尾页
-      },
-      limit:2,
-    });
-    var $ = layui.$, active = {
-      reload: function () {
-        var demoReload = $('#demoReload');
+    var form = layui.form;
+    var $ = layui.$;
+    $("#subForm").on('click', '.layui-btn', function () {
+      var $this = $(this);
+      var url = $this.attr("data-url");
+      var event = $this.attr("data-type");
+      var data = '';
+      var name = $this.attr('data-name');
+      if (event === 'add') {
+        data = $this.prev().find('input').val();
+      } else if (event === 'del') {
+        data = $this.prev().find('select').val();
+      }
 
-        //执行重载
-        table.reload('testReload', {
-          page: {
-            curr: 1 //重新从第 1 页开始
+      if (data === '') {
+        layer.msg('请输入内容！', {icon: 2});
+        return false;
+      }
+      $.ajax({
+        url: url,
+        data: {name: data},
+        type: 'post',
+        dataType: 'json',
+        success: function (res) {
+          if (res.code === 1) {
+
+            layer.msg(res.msg,{
+              icon:1,
+              time: 1000, //1秒关闭（如果不配置，默认是3秒）//设置后不需要自己写定时关闭了，单位是毫秒
+              end: function () {
+                window.location.reload();//页面刷新
+              }});
+          } else {
+
+            layer.msg(res.msg,{icon:2});
           }
-          , where: {
-            role_name: demoReload.val(),
-          }
-        });
-      },
-      delCheckData: function () {
-        var checkStatus = table.checkStatus('testReload'),
-          data = checkStatus.data;
-        if (data.length > 0) {
-          var ids = '';
-          for (var i = 0; i < data.length; i++) {
-            ids += data[i].id + ',';
-          }
-          layer.confirm('您确认要删除所选条目吗？', function (index) {
-            $(".layui-form-checked").not('.header').parents('tr').remove();
-            layer.msg('删除成功！', {icon: 1});
-          })
-        } else {
-          layer.msg('请选择要删除的条目！', {icon: 2});
         }
-      }
-    };
-
-    $('.demoTable').on('click', '.layui-btn', function () {
-      var type = $(this).data('type');
-      active[type] ? active[type].call(this) : '';
-    });
-    //监听单元格编辑
-    table.on('edit(test)', function (obj) {
-      var value = obj.value, //得到修改后的值
-        data = obj.data, //得到所在行所有键值
-        field = obj.field; //得到字段
-    });
-    //监听行工具事件
-    table.on('tool(test)', function (obj) {
-      var data = obj.data;
-      //console.log(obj)
-      if (obj.event === 'del') {
-        layer.confirm('真的删除行么', function (index) {
-          obj.del();
-          layer.close(index);
-        });
-      } else if (obj.event === 'setFun') {
-        var url=$(this).attr("data-url");
-        window.location.href=url+"?role_id="+data.role_id;
-      }
-    });
+      });
+    })
   });
 </script>
 </body>

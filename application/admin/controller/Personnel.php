@@ -1,6 +1,6 @@
 <?php
 
-namespace app\admin\Controller;
+namespace app\admin\controller;
 
 use think\Controller;
 use think\Request;
@@ -8,11 +8,11 @@ use think\Db;
 use think\Loader;
 use PHPExcel;
 
-class Personnel extends Controller
+class Personnel extends Common
 {
     public function resumes()
     {
-        $user = session('admin');
+        $user = $this->user;
 
         if (request()->isPost()){
 
@@ -25,7 +25,7 @@ class Personnel extends Controller
             $tol=($page-1)*$limit;
 
             //搜索
-            $resumeName = input('key');
+            $resumeName = input('name');
 
             $where = '1=1';
 
@@ -33,9 +33,9 @@ class Personnel extends Controller
                 $where.= " and resume_name like '%".$resumeName."%' ";
             }
 
-            $role = db('back_resume')->where($where)->limit($tol,$limit)->select();
-            //var_dump($role);die;
-            $list = Db::name('back_resume')->where($where)->select();
+            $role = db::name('back_resume')->where($where)->limit($tol,$limit)->select();
+
+            $list = db::name('back_resume')->where($where)->select();
 
             $count = count($list);
 
@@ -47,13 +47,17 @@ class Personnel extends Controller
 
             return json_encode($result);
 
+        }else{
+            $sites = db::name('back_project')->select();
+
+            return view('resumes',['user'=>$user,'sites'=>$sites]);
         }
-        return view('resumes',['user'=>$user]);
+
     }
 
     public function del()
     {
-        $user = session('admin');
+        $user = $this->user;
 
         $roleId = input('resume_id');
 
@@ -79,8 +83,8 @@ class Personnel extends Controller
 
     public function search()
     {
-        $user = session('admin');
-
+        $user = $this->user;
+        $txuser= Request::instance()->param('txuser');
         if (request()->isPost()){
 
             //获取每页显示的条数
@@ -99,10 +103,112 @@ class Personnel extends Controller
             if (!empty($resumeName)){
                 $where.= " and resume_name like '%".$resumeName."%' ";
             }
+            //搜索
+            $resumeName = input('name');
 
-            $role = db('back_query')->where($where)->limit($tol,$limit)->select();
-            //var_dump($role);die;
-            $list = Db::name('back_query')->where($where)->select();
+            $resumeSite = input('site');
+
+            $resumeStation = input('station');
+
+            $resumeAge = input('age');
+            //var_dump($resumeAge);die;
+            $resumeIndate = input('indate');
+
+            $idnumber = input('idnumber');
+
+            $stats = substr($resumeIndate,0,strrpos($resumeIndate,' - '));
+            $end = substr($resumeIndate,10,strrpos($resumeIndate,'- '));
+
+            $where = '1=1';
+
+            if (!empty($resumeName)){
+                $where.= " and name like '%".$resumeName."%' ";
+            }
+
+            if (!empty($resumeSite)){
+                $where.= " and site like '%".$resumeSite."%' ";
+            }
+
+            if (!empty($resumeAge)){
+                $where.= " and age like '%".$resumeAge."%' ";
+            }
+            if (!empty($resumeStation)){
+                $where.= " and station like '%".$resumeStation."%' ";
+            }
+
+            if (!empty($resumeIndate)){
+                $where.= " and indate like '%".$resumeIndate."%' ";
+            }
+
+            if (!empty($idnumber)){
+                $where.= " and idnumber = $idnumber";
+            }
+
+            if($txuser==1){//查询要退休的人员 男60 女50
+                $wheres['age']=['egt',49];
+                $lists=array();
+                $role = db('back_query')->where($wheres)->limit($tol,$limit)->select();
+                foreach ($role as $k=>$v){
+                    if($v['sex']=="女"){
+                        $times=strtotime($v['birthday']);//获得出生时的时间戳
+                        $gqtime=strtotime("+50 year",$times);//获得退休时的时间戳
+                        $nowtime=($gqtime-time())/86400;
+                        if($nowtime<=30){
+                            $lists[]=$role[$k];
+                        }
+                    }elseif ($v['sex']=="男"){
+                        $times=strtotime($v['birthday']);//获得出生时的时间戳
+                        $gqtime=strtotime("+60 year",$times);//获得退休时的时间戳
+                        $nowtime=($gqtime-time())/86400;
+                        if($nowtime<=30){
+                            $lists[]=$role[$k];
+                        }
+                    }
+                }
+                $role = $lists;
+                $list = $lists;
+            }else{
+                $role = db('back_query')->where($where)->limit($tol,$limit)->select();
+                $list = Db::name('back_query')->where($where)->select();
+            }
+
+
+
+            if($stats&&$end){//如果提交了时间查询，那就对时间做处理
+                $list=array();
+                foreach ($role as $k=>$v){
+                    $stime=strtotime($stats);
+                    $etime=strtotime($end);
+
+                    if($stime<=strtotime($v['indate'])&&strtotime($v['indate'])<$etime){
+                        $list[]=$role[$k];
+                    }elseif ($stime<=strtotime($v['livedate'])&&strtotime($v['livedate'])<$etime){
+                        $list[]=$role[$k];
+                    }elseif ($stime<=strtotime($v['socialsecuritybegin'])&&strtotime($v['socialsecuritybegin'])<$etime){
+                        $list[]=$role[$k];
+                    }elseif ($stime<=strtotime($v['socialsecuritystop'])&&strtotime($v['socialsecuritystop'])<$etime){
+                        $list[]=$role[$k];
+                    }elseif ($stime<=strtotime($v['accumulationfundbegin'])&&strtotime($v['accumulationfundbegin'])<$etime){
+                        $list[]=$role[$k];
+                    }elseif ($stime<=strtotime($v['accumulationfundstop'])&&strtotime($v['accumulationfundstop'])<$etime){
+                        $list[]=$role[$k];
+                    }elseif ($stime<=strtotime($v['birthday'])&&strtotime($v['birthday'])<$etime){
+                        $list[]=$role[$k];
+                    }elseif ($stime<=strtotime($v['contractbegin'])&&strtotime($v['contractbegin'])<$etime){
+                        $list[]=$role[$k];
+                    }elseif ($stime<=strtotime($v['contractend'])&&strtotime($v['contractend'])<$etime){
+                        $list[]=$role[$k];
+                    }
+                }
+                $role=$list;
+            }
+
+
+
+
+
+
+
 
             $count = count($list);
 
@@ -114,15 +220,38 @@ class Personnel extends Controller
 
             return json_encode($result);
 
+        }else{
+            $sites = db::name('back_project')->select();
+
+            $insurance = db::name('insurance')->select();
+
+            $fund = db('fund')->select();
+
+            $bankname = db('bankname')->select();
+            //合同类型
+            $contract = db('contract')->select();
+
+            return view('search',[
+                'user'=>$user,
+                'insurance'  => $insurance,
+                'fund'       => $fund,
+                'bankname'   => $bankname,
+                'contract'   => $contract,
+                'sites'      => $sites,
+                'txuser'     => $txuser
+            ]);
         }
-        return view('search',['user'=>$user]);
+
     }
+
+
+
 
 
 
     public function personnel()
     {
-        $user = session('admin');
+        $user = $this->user;
 
         if (request()->isPost()){
 
@@ -136,10 +265,10 @@ class Personnel extends Controller
 
             //搜索
             $resumeName = input('name');
-            //var_dump($resumeName);die;
+
             $resumeIDNumber = input('idnumber');
 
-            $resumeDate = input('date');
+            $resumeDate = input('indate');
 
             $where = '1=1';
 
@@ -151,8 +280,8 @@ class Personnel extends Controller
                 $where.= " and idnumber like '%".$resumeIDNumber."%' ";
             }
 
-            if (!empty($resumedate)){
-                $where.= " and date like '%".$resumedate."%' ";
+            if (!empty($resumeDate)){
+                $where.= " and indate like '%".$resumeDate."%' ";
             }
 
             $role = db('back_query')->where($where)->limit($tol,$limit)->select();
@@ -169,19 +298,56 @@ class Personnel extends Controller
 
             return json_encode($result);
 
+        }else{
+            $sites = db::name('back_project')->select();
+
+            $insurance = db::name('insurance')->select();
+
+            $fund = db('fund')->select();
+
+            $bankname = db('bankname')->select();
+            //合同类型
+            $contract = db('contract')->select();
+
+            return view('personnel',[
+                'user'   => $user,
+                'sites'  => $sites,
+                'insurance' => $insurance,
+                'fund' => $fund,
+                'bankname' => $bankname,
+                'contract' =>$contract
+            ]);
         }
-        return view('personnel',['user'=>$user]);
+
     }
 
     public function add()
     {
         vendor("PHPExcel");
-        vendor("PHPExcel.Classes.PHPExcel");
         vendor('PHPExcel . Classes . PHPExcel . IOFactory . PHPExcel_IOFactory');
         vendor('PHPExcel . Classes . PHPExcel . Reader . Excel5');
         $objPHPExcel = new \PHPExcel();
+
         $file = request()->file('file');
-        $info = $file->move(ROOT_PATH . 'public' . DS . 'excel');
+
+        if (empty($file)) {
+            return $this->error('您未选择表格!!', url('ceshi/index'));
+        }
+
+        $file_types = explode(".", $_FILES ['file'] ['name']); // ["name"] => string(25) "excel文件名.xls"
+
+        $file_type = $file_types [count($file_types) - 1];//xls后缀
+        //var_dump($file_type);die;
+        $file_name = $file_types [count($file_types) - 2];//xls去后缀的文件名
+
+        /*判别是不是.xls文件，判别是不是excel文件*/
+        if (strtolower($file_type) != "xls" && strtolower($file_type) != "xlsx") {
+            return $this->error('不是xls或者不是xlsx类型结尾的!!', url('ceshi/index'));
+            die;
+        }
+
+        $info = $file->move('public/excel');
+
         if ($info) {
 
             header("Content-type:text/html;charset=utf-8");
@@ -191,13 +357,13 @@ class Personnel extends Controller
             //文件路径
 
             $filePath = 'public/excel/' . $fileName;
-
+            //var_dump($filePath);die;
             $objReader = \PHPExcel_IOFactory::createReader('Excel5');
 
             $obj_PHPExcel = $objReader->load($_FILES ['file']['tmp_name'], $encode = 'utf-8');
-
+//            var_dump($obj_PHPExcel);die;
             $excel_array = $obj_PHPExcel->getsheet(0)->toArray();   //转换为数组格式
-            // var_dump($excel_array);die;
+//            var_dump($excel_array);die;
             array_shift($excel_array);  //删除第一个数组(标题);
             $datas = [];
             $data_errors = [];
@@ -214,19 +380,16 @@ class Personnel extends Controller
 
                 if (!empty($v[0]) && !empty($v[1])) {
 
-                    $wh['fn'] = $v[2];
-
+                    $wh['fn'] = $v[0];
+//                    var_dump($wh);die;
                     $res_info = db('back_query')->where($wh)->count();
                     if ($res_info == 0) {
                         $data = array(
-                            'fn' => $v[1], //档案号
-
+                        'fn' => $v[1], //档案号
                         'site' => $v[2],
-
                         'name' => $v[3],
-
-                        'indate' => $v[4],
-                        'livedate' => $v[5],
+                        'indate' => date('Y/m/d',strtotime($v[4])),
+                        'livedate' => date('Y/m/d',strtotime($v[5])),
                         'salary' => $v[6],
                         'insurance' => $v[7],
                         'socialsecuritybegin' => $v[8],
@@ -235,7 +398,7 @@ class Personnel extends Controller
                         'accumulationfundbegin' => $v[11],
                         'accumulationfundstop' => $v[12],
                         'accumulationfundremarks' => $v[13],
-                        'station' => $v[14],
+                        'station' =>  $v[14],
                         'idnumber' => $v[15],
                         'birthday' => $v[16],
                         'age' => $v[17],
@@ -247,8 +410,8 @@ class Personnel extends Controller
                         'urgency' => $v[23],
                         'urgencyrelation' => $v[24],
                         'urgencymobile' => $v[25],
-                        'bankname' => $v[26],
-                        'banknumber' => $v[27],
+                        'bankname' =>     $v[26],
+                        'banknumber' =>   $v[27],
                         'contracttype' => $v[28],
                         'contractstatus' => $v[29],
                         'contractbegin' => $v[30],
@@ -276,16 +439,12 @@ class Personnel extends Controller
                             // 'create_time' => date('Y - m - d H:i:s'),
                         );
                         $datas[] = $data;
-
-                        // var_dump($datas);die;
+//                        var_dump($datas);die;
                     }
+
                 } else {
                     $error_data = array(
                         'fn' => $v[0],
-                        // 'user_name' => $v[1],
-                        // 'department' => $v[2],
-                        // 'create_id' => $admin_id,
-                        // 'create_time' => date('Y - m - d H:i:s'),
                     );
                     $data_errors[] = $error_data;
 
@@ -294,30 +453,34 @@ class Personnel extends Controller
             }
             $errors_data = count($data_errors);
             $repetition = $cn - $errors_data;
-            $idnumber = db('back_query')->column('idnumber');
-           // var_dump($idnumber);die;
-            $dateAll = db('back_query')->where('idnumber',$idnumber[0])->find();
-            //var_dump($dateAll);die;
-            if($dateAll==$idnumber[0]){
-                $success = db('back_query')->insertAll($datas); //批量插入数据
-                $result=array();
-                $result['code']=0;
-                $result['msg']="";
 
-                $result['data'] = $success;
+            $dateAll = db('back_query')->where('idnumber',$datas[0]['idnumber'])->find();
+
+            if($dateAll['idnumber']==$datas[0]['idnumber']){
+
+                $result = [
+                    'code' => -1
+                ];
+
+
+                $success = db('back_querys')->insertAll($datas); //批量插入数据
+
+                $result=array();
+                $result['code']=-1;
+                $result['msg']="导入失败";
+                //$result['data']=$success;;
+
                 return json_encode($result);die;
             }else{
-                $success = db('back_querys')->insertAll($datas); //批量插入数据
+
+                $success = db('back_query')->insertAll($datas); //批量插入数据
+
                 $result=array();
-                $result['code']=0;
-                $result['msg']="";
-
-                $result['data'] = $success;
-               // return json_encode($result);die;
+                $result['code']=1;
+                $result['msg']="导入成功";
+                $result['data']=$success;;
+                return json_encode($result);die;
             }
-
-
-
         }else{
 
         }
@@ -326,7 +489,6 @@ class Personnel extends Controller
 
     public function dell()
     {
-        //user = session('admin');
 
         $roleId = input('query_id');
 
@@ -349,6 +511,7 @@ class Personnel extends Controller
         return json_encode($request);die;
     }
 
+    //导出
     public function export()
     {
         vendor("PHPExcel");
@@ -466,9 +629,331 @@ class Personnel extends Controller
             $i++;
         }
         //var_dump($sheet);die;
+        $files = '人员查询'.date('Y-m-d H:i:s');
         header('Content-Type: application/vnd.ms-excel');
-        header('Content-Disposition: attachment;filename="人员查询.xls"');
+        header('Content-Disposition: attachment;filename="'.$files.'.xls"');
         $objWriter = \PHPExcel_IOFactory::createWriter($excel, 'Excel5');
         $objWriter->save('php://output');
+    }
+
+    public function delete()
+    {
+        $id=input("query_id/a");
+
+        $str = implode(",",$id) ;
+
+        $ids = substr($str,0,strrpos($str,','));
+        //var_dump($ids);die;
+
+        $data=Db::name("back_query")->where("query_id in ($ids)")->delete();
+        //var_dump($data);die;
+        if (null != $data){
+            $request =[
+                'message' => '删除成功',
+                'status'  => 1
+
+            ];
+        }else{
+            $request =[
+                'message' => '删除失败',
+                'status'  => 0
+
+            ];
+        }
+
+        return json_encode($request);die;
+    }
+
+    public function deltes()
+    {
+        $roleId = input('query_id');
+
+        $data = db('back_query')->where('query_id','=',$roleId)->delete();
+
+        if (null != $data){
+            $request =[
+                'message' => '删除成功',
+                'status'  => 1
+
+            ];
+        }else{
+            $request =[
+                'message' => '删除失败',
+                'status'  => 0
+
+            ];
+        }
+
+        return json_encode($request);die;
+    }
+
+    public function import()
+    {
+//        echo 111;die;
+        vendor("PHPExcel");
+        vendor('PHPExcel . Classes . PHPExcel . IOFactory . PHPExcel_IOFactory');
+        vendor('PHPExcel . Classes . PHPExcel . Reader . Excel5');
+        $objPHPExcel = new \PHPExcel();
+
+        $file = request()->file('file');
+
+        if (empty($file)) {
+            return $this->error('您未选择表格!!', url('ceshi/index'));
+        }
+
+        $file_types = explode(".", $_FILES ['file'] ['name']); // ["name"] => string(25) "excel文件名.xls"
+
+        $file_type = $file_types [count($file_types) - 1];//xls后缀
+        //var_dump($file_type);die;
+        $file_name = $file_types [count($file_types) - 2];//xls去后缀的文件名
+
+        /*判别是不是.xls文件，判别是不是excel文件*/
+        if (strtolower($file_type) != "xls" && strtolower($file_type) != "xlsx") {
+            return $this->error('不是xls或者不是xlsx类型结尾的!!', url('ceshi/index'));
+            die;
+        }
+
+        $info = $file->move('public/excel');
+
+        if ($info) {
+
+            header("Content-type:text/html;charset=utf-8");
+
+            $fileName = $info->getSaveName();
+
+            //文件路径
+            $filePath = 'public/excel/' . $fileName;
+
+            $objReader = \PHPExcel_IOFactory::createReader('Excel5');
+
+            //echo "<pre/>";
+            //print_r($filePath);
+
+            $obj_PHPExcel = $objReader->load($filePath, $encode = 'utf-8');
+
+            //echo "<pre/>";
+            //print_r($file);
+
+            $excel_array = $obj_PHPExcel->getsheet(0)->toArray();   //转换为数组格式
+
+//            print_r($excel_array);die;
+
+
+            array_shift($excel_array);  //删除第一个数组(标题);
+
+            $datas = [];
+
+            $data_errors = [];
+//处理Excel导入时数据为空的情况
+            foreach ($excel_array as $k => $v) {
+                if (!empty($v[0] || $v[1] || $v[2])) {
+                    $excel_list[] = $v;
+                }
+            }
+            $cn = count($excel_list);
+
+//循环遍历，组装数据进行入库
+            foreach ($excel_list as $k => $v) {
+
+                if (!empty($v[0]) && !empty($v[1])) {
+
+                    $wh['resume_data'] = $v[0];
+//                    var_dump($wh);die;
+                    $res_info = db('back_resume')->where($wh)->count();
+                    if ($res_info == 0) {
+                        $data = array(
+                            'resume_data' => $v[0], //档案号
+
+                            'resume_dq' => $v[1],
+
+                            'resume_zw' => $v[2],
+
+                            'resume_xmd' => $v[3],
+                            'resume_name' => $v[4],
+                            'resume_xb' => $v[5],
+                            'resume_age' => $v[6],
+                            'resume_xl' => $v[7],
+                            'resume_gzjx' => $v[8],
+                            'resume_qwzw' => $v[9],
+                            'resume_qwdd' => $v[10],
+                            'resume_qwxz' => $v[11],
+                            'resume_tel' => $v[12],
+                            'resume_bz' => $v[13],
+                        );
+                        $datas[] = $data;
+
+                         var_dump($datas);die;
+                    }
+                } else {
+                    $error_data = array(
+                        'resume_data' => $v[0],
+                    );
+                    $data_errors[] = $error_data;
+
+                }
+
+            }
+            $errors_data = count($data_errors);
+            $repetition = $cn - $errors_data;
+
+            $success = db('back_resume')->insert($datas);die; //批量插入数据
+            $dateAll = db('back_resume')->where('idnumber',$datas[0]['idnumber'])->find();
+            //var_dump($dateAll);die;
+            if($dateAll=$datas[0]['idnumber']){
+                $result = [
+                    'code' => 1
+                ];
+
+                return json_encode($result);die;
+
+                $success = db('back_query')->insertAll($datas); //批量插入数据
+               // var_dump($success);die;
+                $result=array();
+                $result['code']=0;
+                $result['msg']="";
+
+                $result['data'] = $success;
+                return json_encode($result);die;
+            }else{
+                $success = db('back_resume')->insertAll($datas); //批量插入数据
+                $result=array();
+                $result['file']=$filePath;
+                $result['code']=1;
+                $result['msg']="";
+
+                $result['data'] = $success;
+
+                return json_encode($result);die;
+            }
+        }else{
+
+        }
+    }
+
+    public function addto()
+    {
+        if (request()->isPost()){
+
+            $v = input();
+           // var_dump($v);die;
+
+            $dataAll = [
+                'fn' => isset($v['fn'])?$v['fn']:'', //档案号
+                'site' => isset($v['site'])?$v['site']:'',
+                'name' => isset($v['name'])?$v['name']:'',
+                'indate' => isset($v['indate'])?$v['indate']:'',
+                'livedate' => isset($v['livedate'])?$v['livedate']:'',
+                'salary' => isset($v['salary'])?$v['salary']:'',
+                'insurance' => isset($v['insurance'])?$v['insurance']:'',
+                'socialsecuritybegin' => isset($v['socialsecuritybegin'])?$v['socialsecuritybegin']:'',
+                'socialsecuritystop' => isset($v['socialsecuritystop'])?$v['socialsecuritystop']:'',
+                'accumulationfundcity' => isset($v['accumulationfundcity'])?$v['accumulationfundcity']:'',
+                'accumulationfundbegin' => isset($v['accumulationfundbegin'])?$v['accumulationfundbegin']:'',
+                'accumulationfundstop' => isset($v['accumulationfundstop'])?$v['accumulationfundstop']:'',
+                'accumulationfundremarks' => isset($v['accumulationfundremarks'])?$v['accumulationfundremarks']:'',
+                'station' =>  isset($v['station'])?$v['station']:'',
+                'idnumber' => isset($v['idnumber'])?$v['idnumber']:'',
+                'birthday' => isset($v['birthday'])?$v['birthday']:'',
+                'age' => isset($v['age'])?$v['age']:'',
+                'issite' => isset($v['issite'])?$v['issite']:'',
+                'nowsite' => isset($v['nowsite'])?$v['nowsite']:'',
+                'workstatus' => isset($v['workstatus'])?$v['workstatus']:'',
+                'nowsitex' => isset($v['nowsitex'])?$v['nowsitex']:'',
+                'mobile' => isset($v['mobile'])?$v['mobile']:'',
+                'urgency' => isset($v['urgency'])?$v['urgency']:'',
+                'urgencyrelation' => isset($v['urgencyrelation'])?$v['urgencyrelation']:'',
+                'urgencymobile' => isset($v['urgencymobile'])?$v['urgencymobile']:'',
+                'bankname' =>     isset($v['bankname'])?$v['bankname']:'',
+                'banknumber' =>   isset($v['banknumber'])?$v['banknumber']:'',
+                'contracttype' => isset($v['contracttype'])?$v['contracttype']:'',
+                'contractstatus' => isset($v['contractstatus'])?$v['contractstatus']:'',
+                'contractbegin' => isset($v['contractbegin'])?$v['contractbegin']:'',
+                'contractend' => isset($v['contractend'])?$v['contractend']:'',
+                'contractremark' => isset($v['contractremark'])?$v['contractremark']:'',
+                'idcopy' => isset($v['idcopy'])?$v['idcopy']:'',
+                'bankcardcopy' => isset($v['bankcardcopy'])?$v['bankcardcopy']:'',
+                'staffentry' => isset($v['staffentry'])?$v['staffentry']:'',
+                'confirmation' => isset($v['confirmation'])?$v['confirmation']:'',
+                'social' => isset($v['social'])?$v['social']:'',
+                'haining' => isset($v['haining'])?$v['haining']:'',
+                'hourlyworke' => isset($v['hourlyworke'])?$v['hourlyworke']:'',
+                'statement' => isset($v['statement'])?$v['statement']:'',
+                'interview' => isset($v['interview'])?$v['interview']:'',
+                'job' => isset($v['job'])?$v['job']:'',
+                'employee' => isset($v['employee'])?$v['employee']:'',
+                'directory' => isset($v['directory'])?$v['directory']:'',
+                'registration' => isset($v['registration'])?$v['registration']:'',
+                'training' => isset($v['training'])?$v['training']:'',
+                'instructions' => isset($v['instructions'])?$v['instructions']:'',
+                'agreement' => isset($v['agreement'])?$v['agreement']:''
+            ];
+
+
+
+            if (isset($v['query_id'])){
+
+                $res = db::name('back_query')->where('query_id',$v['query_id'])->update($dataAll);
+                return msg(1,$res,'');
+            }else{
+                $list = db::name('back_query')->insert($dataAll);
+                return msg(1,$list,'');
+            }
+        }
+    }
+
+    public function powerDel()
+    {
+        $id=input("query_id/a");
+
+        $str = implode(",",$id) ;
+
+        $ids = substr($str,0,strrpos($str,','));
+
+
+        $data=Db::name("back_query")->where("query_id in ($ids)")->delete();
+
+        if (null != $data){
+            $request =[
+                'message' => '删除成功',
+                'status'  => 1
+
+            ];
+        }else{
+            $request =[
+                'message' => '删除失败',
+                'status'  => 0
+
+            ];
+        }
+
+        return json_encode($request);die;
+    }
+
+    public function powerAdd()
+    {
+        echo 111;die;
+    }
+
+    public function perDel()
+    {
+        $roleId = input('query_id');
+
+        $data = db('back_query')->where('query_id','=',$roleId)->delete();
+
+        if (null != $data){
+            $request =[
+                'message' => '删除成功',
+                'status'  => 1
+
+            ];
+        }else{
+            $request =[
+                'message' => '删除失败',
+                'status'  => 0
+
+            ];
+        }
+
+        return json_encode($request);die;
     }
 }

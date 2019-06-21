@@ -1,55 +1,84 @@
 <?php
 
-namespace app\admin\Controller;
+namespace app\admin\controller;
 
 use think\Controller;
 use think\Request;
 use think\Db;
 
-class Console extends Controller
+
+class Console extends Common
 {
     public function index()
     {
-        $user = session('admin');
+        $user = $this->user;
 
-//        $start = date('Y-m-01 00:00:00');
-//        $end = date('Y-m-d H:i:s');
-//        SELECT * FROM `table_name` WHERE `time` >= unix_timestamp('”.$start.”') AND `time` <= unix_timestamp('$end');
+        //在职人数
+        $zai=Db::name('back_query')->where(['sfzz'=>"是"])->count();
 
-        //本月在职数据
-        $Onthejob = db::query("SELECT count(indate) as zai FROM back_query WHERE DATE_FORMAT( indate,'%Y%m') = DATE_FORMAT( CURDATE( ) , '%Y%m')");
+        //离职人数
+        $lznum=0;
+        $where['sfzz']="否";
+        $li=Db::name('back_query')->where($where)->field('livedate')->select();
+        foreach ($li as $k=>$v){
+            if(date('Y-m')==date('Y-m',strtotime($v['livedate']))){
+                $lznum++;
+            }
+        }
 
-        $zai = $Onthejob[0]['zai'];
-        //本月离职数据
-        $Onthejob = db::query("SELECT count(livedate) as li FROM back_query WHERE DATE_FORMAT( livedate,'%Y%m') = DATE_FORMAT( CURDATE( ) , '%Y%m')");
+        //参保人数
+        unset($where);
+        $stime=strtotime(date('Y-m'));
+        $etime=strtotime(date('Y-m',strtotime('+1 month')));
+        $where['yufen']=['between',"$stime,$etime"];
+        $insured=Db::name('back_social')->where($where)->count();
 
-        $li = $Onthejob[0]['li'];
+        //发薪人数
+        unset($where);
+        $where['date']=date('Y-m');
+        $salary=Db::name('back_wages')->where($where)->count();
 
-        $salary = db::query("SELECT count(salary) as li FROM back_query WHERE DATE_FORMAT( indate,'%Y%m') = DATE_FORMAT( CURDATE( ) , '%Y%m')");
+        //下月合同到期人数
+        $nextuser=0;
+        $surpluss=Db::name('back_query')->field('contractend')->select();
+        foreach ($surpluss as $k=>$v){
+            if(((strtotime($v['contractend'])-time())/86400)<=30&&((strtotime($v['contractend'])-time())/86400)>0){
+                $nextuser++;
+            }
+        }
 
-        $salary = $salary[0]['li'];
 
-        $insured = db::query("SELECT count(socialsecuritybegin) as insured FROM back_query WHERE DATE_FORMAT( indate,'%Y%m') = DATE_FORMAT( CURDATE( ) , '%Y%m')");
+        $wheres['age']=['egt',49];
+        $lists=array();
+        $role = db('back_query')->where($wheres)->select();
+        foreach ($role as $k=>$v){
+            if($v['sex']=="女"){
+                $times=strtotime($v['birthday']);//获得出生时的时间戳
+                $gqtime=strtotime("+50 year",$times);//获得退休时的时间戳
+                $nowtime=($gqtime-time())/86400;
+                if($nowtime<=30){
+                    $lists[]=$role[$k];
+                }
+            }elseif ($v['sex']=="男"){
+                $times=strtotime($v['birthday']);//获得出生时的时间戳
+                $gqtime=strtotime("+60 year",$times);//获得退休时的时间戳
+                $nowtime=($gqtime-time())/86400;
+                if($nowtime<=30){
+                    $lists[]=$role[$k];
+                }
+            }
+        }
+        $txuser=count($lists);
 
-
-        $insured = $insured[0]['insured'];
-
-        $startime = strtotime('30 days');
-
-        $time = db::query('select contractremark from back_query');
-        $c = strtotime($time[0]['contractremark']);
-
-        $surplus = db::query("select count(contractremark) as num from back_query where '.$c.'<".$startime);
-
-        $surpluss = $surplus[0]['num'];
 
         return view('console',[
             'user'     => $user,
             'zai'      => $zai,
-            'li'       => $li,
+            'li'       => $lznum,
             'salary'   => $salary,
             'insured'  => $insured,
-            'surplus'  => $surpluss
+            'surplus'  => $nextuser,
+            'txuser'   => $txuser
         ]);
     }
 }

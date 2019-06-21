@@ -6,6 +6,7 @@ use think\Controller;
 use think\Db;
 use think\Loader;
 use PHPExcel;
+use PHPExcel_IOFactory;
 
 class Ceshi extends controller
 {
@@ -69,7 +70,7 @@ class Ceshi extends controller
             $objContent = $objReader->load($_FILES ['file']['tmp_name'], $encode = 'utf-8');
 
             $sheetContent = $objContent->getSheet(0)->toArray();
-            //var_dump($sheetContent);die;
+            var_dump($sheetContent);die;
             unset($sheetContent[0]);
 
             foreach ($sheetContent as $k => $v) {
@@ -143,6 +144,7 @@ class Ceshi extends controller
 
     public function import_excel()
     {
+
         vendor("PHPExcel");
         vendor('PHPExcel.PHPExcel.Reader.Excel5');
         header("content-type:text/html;charset=utf-8");
@@ -173,7 +175,7 @@ class Ceshi extends controller
             //实例化PHPExcel类
 
             $PHPReader = new PHPExcel();
-
+            var_dump($PHPReader);die;
             //读取excel文件
 
             $objPHPExcel = $PHPReader::load($filePath);
@@ -292,10 +294,11 @@ class Ceshi extends controller
         vendor('PHPExcel . Classes . PHPExcel . IOFactory . PHPExcel_IOFactory');
         vendor('PHPExcel . Classes . PHPExcel . Reader . Excel5');
         $objPHPExcel = new \PHPExcel();
-       // header("content-type:html")
+
         $file = request()->file('file');
+
         $info = $file->move(ROOT_PATH . 'public' . DS . 'excel');//上传验证后缀名,以及上传之后移动的地址
-        //var_dump($info);die;
+
         if ($info) {
 
             header("Content-type:text/html;charset=utf-8");
@@ -304,15 +307,14 @@ class Ceshi extends controller
 
             //文件路径
 
-
             $filePath = 'public/excel/' . $fileName;
 
             $objReader = \PHPExcel_IOFactory::createReader('Excel5');
-
+            //var_dump($objReader);die;
             $obj_PHPExcel = $objReader->load($_FILES ['file']['tmp_name'], $encode = 'utf-8');
-           
- $excel_array = $obj_PHPExcel->getsheet(0)->toArray();   //转换为数组格式
- // var_dump($excel_array);die;
+
+            $excel_array = $obj_PHPExcel->getsheet(0)->toArray();   //转换为数组格式
+//  var_dump($excel_array);die;
  array_shift($excel_array);  //删除第一个数组(标题);
  $datas = [];
  $data_errors = [];
@@ -323,19 +325,19 @@ class Ceshi extends controller
      }
  }
  $cn = count($excel_list);
-
+//var_dump($cn);die;
 //循环遍历，组装数据进行入库
  foreach ($excel_list as $k => $v) {
     
      if (!empty($v[0]) && !empty($v[0])) {
             //var_dump($v[0]);die;
-         $wh['fn'] = $v[2];
+         $wh['fn'] = $v[0];
           
-         // var_dump($wh);die;
+//          var_dump($wh);die;
          //var_dump($wh);die;
         // $wh['is_deleted'] = '1';
          $res_info = db('back_query')->where($wh)->count();
-         // var_dump($res_info);die;
+//          var_dump($res_info);die;
          if ($res_info == 0) {
              $data = array(
                  'fn' => $v[1],
@@ -349,7 +351,7 @@ class Ceshi extends controller
  );
  $datas[] = $data;
 
- // var_dump($datas);die;
+  var_dump($datas);die;
  }
      } else {
          $error_data = array(
@@ -387,6 +389,28 @@ class Ceshi extends controller
             return json(['code' => 2, 'message' => '导入失败', 'result' => null]);
         }
 
+    }
+
+    public function cc()
+    {
+        vendor("PHPExcel");
+        vendor("PHPExcel.Classes.PHPExcel");
+        vendor('PHPExcel . Classes . PHPExcel . IOFactory . PHPExcel_IOFactory');
+        vendor('PHPExcel . Classes . PHPExcel . Reader . Excel5');
+
+        $excel=new PHPExcel();
+
+        $excel = PHPExcel_IOFactory::load($_FILES ['file']['tmp_name'], $encode = 'utf-8');
+
+//        $sheet = $excel->getActiveSheet();//第一种
+
+        $sheet = $excel->getActiveSheet(0);//获得sheet
+//        var_dump($sheet);die;
+        $highestRow = $sheet->getHighestRow(); // 取得共有数据数
+//        var_dump($highestRow);die;
+        $data = $sheet->toArray();
+
+        print_r($data);
     }
 
 

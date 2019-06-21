@@ -6,16 +6,18 @@ use think\Controller;
 use Think\Exception;
 use think\Request;
 use think\Db;
+use think\response\Json;
 use think\Session;
 
 class Power extends Common
 {
+
+
     //权限添加
     public function administrator()
     {
-        //echo 11;die;
 
-        if (request()->isPost()){
+        if (Request::instance()->isPost()){
 
             //获取每页显示的条数
             $limit= Request::instance()->param('limit');
@@ -29,15 +31,25 @@ class Power extends Common
             $roleName = input('role_name');
 
 
-            $where = '1=1';
+            $where =array();
 
             if (!empty($roleName)){
-                $where.= " and role_name like '%".$roleName."%' ";
+                $where['admin']=$roleName;
             }
 
-            $role = db('nine_role')->alias('a')->join('back_project b','a.site=b.pro_id')->where($where)->limit($tol,$limit)->select();
+            if($this->user['status']!=2){
+                $where['status']=array('neq',2);
+            }
 
-            $list = Db::name('nine_role')->alias('a')->join('back_project b','a.site=b.pro_id')->where($where)->select();
+            $role = db::name('nine_admin')->where($where)->limit($tol,$limit)->select();
+
+            foreach ($role as $k=>$v){
+                $role[$k]['project_name']=Db::name('back_project')->where(['pro_id'=>$v['project']])->value('por_name');
+            }
+
+
+
+            $list = Db::name('nine_admin')->where($where)->select();
 
             $count = count($list);
 
@@ -49,33 +61,30 @@ class Power extends Common
 
             return json_encode($result);
 
+        }else{
+            $user = $this->user;
+            $sites = db::name('back_project')->select();
+            return view('administrator',['user'=>$user,'sites'=>$sites]);
         }
-        $user = session('admin');
 
-        return view('administrator',['user'=>$user]);
     }
 
     public function del()
     {
-        $roleId = input('role_id');
 
-        $data = db('nine_role')->where('role_id','=',$roleId)->delete();
+        $roleId = input('id');
 
-        if (null != $data){
-            $request =[
-                'message' => '删除成功',
-                'status'  => 1
+        $del=Db::name('nine_admin')->where(['admin_id'=>$roleId])->delete();
 
-            ];
+        if ($del){
+            $res['code']=1;
+            $res['msg']="删除成功";
         }else{
-            $request =[
-                'message' => '删除失败',
-                'status'  => 0
-
-            ];
+            $res['code']=0;
+            $res['msg']="删除失败";
         }
 
-        return json_encode($request);die;
+        return json($res);die;
     }
 
 
@@ -94,14 +103,14 @@ class Power extends Common
 
         if (null != $data){
             $request =[
-                'message' => '删除成功',
-                'status'  => 1
+                'msg' => '删除成功',
+                'code'  => 1
 
             ];
         }else{
             $request =[
-                'message' => '删除失败',
-                'status'  => 0
+                'msg' => '删除失败',
+                'code'  => 0
 
             ];
         }
@@ -112,67 +121,60 @@ class Power extends Common
     //权限展示
     public function viewjurisdiction()
     {
-        if (request()->isGet()){
-            $roleId = input('role_id');
 
-            $roleid= $roleId;
+        $role_id=Request::instance()->param('role_id');
+        $user = $this->user;
 
-            session('role_id',$roleid);
-        }
-        $user = session('admin');
 
         $power = db('nine_power')->select();
 
+        /*dump($power);
+        exit();*/
+
         $power = $this->recursion($power, 0);
 
-        $allpower = db::query("select * from nine_power where power_id in(select p_id from nine_rp where r_id in(select r_id from nine_ar where a_id=$user[admin_id]))");
+        $quanxian = Db::name('nine_admin')->where('admin_id',$role_id)->value('quanxian');
+        $quanxian = explode(',',$quanxian);
 
-        $data = array_column($allpower,'power_id');
-        //var_dump($data);die;
-        return view('viewjurisdiction',['power'=>$power,'data'=>$data,'user'=>$user]);
+
+
+        return view('viewjurisdiction',['power'=>$power,'user'=>$user,'quanxian'=>$quanxian]);
     }
 
     //配置权限展示
     public function givejurisdiction()
     {
-        if (request()->isGet()){
-            $roleId = input('role_id');
+        $role_id=Request::instance()->param('role_id');
 
-            $roleid= $roleId;
-
-            session('role_id',$roleid);
-        }
-        $user = session('admin');
-
-        $power = db('nine_power')->select();
-
+        $users = Db::name('nine_admin')->where(['admin_id'=>$role_id])->find();
+        $power = db('nine_power')->where(['status'=>1])->select();
         $power = $this->recursion($power, 0);
-//        var_dump($power);die;
-        return view('givejurisdiction',['user'=>$user,'power'=>$power]);
+        $user = explode(',',$users['quanxian']);
+
+
+        return view('givejurisdiction',['user'=>$user,'power'=>$power,'admin_id'=>$users['admin_id']]);
     }
+
 
     public function add()
     {
         //角色名称的id
-        $roleId = session::get('role_id');
+        $roleId = Request::instance()->param('adamin_id');
+
         if (Request::instance()->isPost()) {
 
-            $data = input();
-            $r_id = $roleId;
-            if (isset($data['p_id'])){
-                $r_id = $roleId;
-                $arr = [];
-                foreach ($data['p_id'] as $val){
+            $data = input('data');
+            $quanxian = substr($data, 0, strlen($data) - 1);
 
-                    $arr[] = ['r_id'=>$r_id,'p_id'=>$val];
-                }
+            $res = db('nine_admin')->where('admin_id', $roleId)->setField(['quanxian' => $quanxian]);
 
-                $res = db('nine_rp')->insertAll($arr);
+            if ($res != false) {
 
-                if ($res){
-                    $this->redirect('admin/power/administrator');
-                }
+                return msg(1, $res, '成功');
+            } else {
+                return msg(0, $res, '失败');
             }
+
         }
     }
 
@@ -180,9 +182,8 @@ class Power extends Common
     public function person()
     {
         $p = session::get('pro');
-
+        //var_dump($p);die;
         if (request()->isPost()){
-
             //获取每页显示的条数
             $limit= Request::instance()->param('limit');
             //获取当前页数
@@ -201,102 +202,104 @@ class Power extends Common
                 $where.= " and por_name like '%".$porName."%' ";
             }
 
-            $role = db::name('back_query')->field('query_id,site,mobile')->where('site','=',$p)->select();
-//            var_dump($role);die;
-            $list = Db::name('back_project')->where($where)->select();
+            $role = db::name('back_query')->field('query_id,station,mobile,indate,livedate,site')->where('site','=',$p)->select();
 
+
+            foreach ($role as $k=>$v){
+                $s = isset($v['indate'])?$v['indate']:'';
+
+                $t = isset($v['livedate'])?$v['livedate']:date('Y/m/d');
+                $start_time=strtotime($s);//入职时间
+
+                $end_time=strtotime($t);//离职时间
+
+                $role[$k]['indate'] =(($end_time-$start_time)/86400);
+
+                if (empty($v['livedate'])){
+                    $role[$k]['status'] = 1;
+                }else{
+                    $role[$k]['status'] =0;
+                }
+            }
+
+
+
+
+
+            $list = Db::name('back_project')->where($where)->select();
             $count = count($list);
 
             $result=array();
             $result['code']=0;
-            $result['msg']="";
+            $result['status']=1;
             $result['count']=$count;
             $result['data'] = $role;
-
+//            var_dump($result);die;
             return json_encode($result);
 
         }else if (request()->isGet()){
 
-                 $proNames = input('pro_name');
+            $proNames = input('project');
 
-                 $pro = $proNames;
+            $pro = $proNames;
 
-                 session('pro',$pro);
+            session('pro',$pro);
         }
-
         $user = session('admin');
 
         return view('person',['user'=>$user]);
+
     }
+
+
+
 
     public function addadmin()
     {
+
         if (Request::instance()->isPost()){
-            $data = input();
 
-            $role = $data['role_name'];
+            $postdata=input();
+            if(empty($postdata['name'])||empty($postdata['admin'])||empty($postdata['pwd'])||empty($postdata['project'])){
+                $res['code']=0;
+                $res['msg']="参数填写完整";
+                return json($res);
+            }
 
-            $proId = $data['pro_id'];
-
-            $admin = db('nine_admin')->where('admin',$data['admin'])->find();
-
-            if($admin == $data['admin']){
-
-                $sql = "insert into nine_admin values (null ,'$data[admin]','$data[pwd]',0)";
-                db('nine_admin')->execute($sql);
+            $user=Db::name('nine_admin')->where(['admin'=>$postdata['admin']])->find();
+            if($user){
+                $res['code']=0;
+                $res['msg']="账号已存在";
+                return json($res);
+            }
+            if(strlen($postdata['admin'])<6 || strlen($postdata['admin'])>20 ){
+                $res['code']=0;
+                $res['msg']="账号由6-20位字母组合";
+                return json($res);
+            }
+            if(strlen($postdata['pwd'])<6 || strlen($postdata['pwd'])>20 ){
+                $res['code']=0;
+                $res['msg']="密码由6-20位字母或数字组成";
+                return json($res);
+            }
+            $postdata['admin']=trim(strtolower($postdata['admin']));
+            $postdata['pwd']=md5($postdata['pwd']);
+            $add=Db::name('nine_admin')->insertGetId($postdata);
+            if($add){
+                $res['code']=1;
+                $res['msg']="添加成功";
+                return json($res);
             }else{
-
-                $requset = [
-                    'status'  => -1,
-                    'message' => '用户名已存在'
-                ];
-
-                return json_encode($requset);
+                $res['code']=0;
+                $res['msg']="添加失败";
+                return json($res);
             }
-            //用戶的id
-            $a_id = db('nine_admin')->getLastInsID();
-
-            $data = [
-                'role_name' => $role,
-                'site'      => $proId
-            ];
-
-            $roleName = db('nine_role')->where('role_name',$role)->find();
-            if ($roleName == $data['role_name']){
-                $datae = db('nine_role')->insert($data);
-            }else{
-                $requset = [
-                    'status'  => -2,
-                    'message' => '角色名已存在'
-                ];
-                return json_encode($requset);
-            }
-
-            //角色的id
-            $r_id = db('nine_role')->getLastInsID();
-
-            $arr = [
-                'a_id'   => $a_id,
-                'r_id'   => $r_id,
-            ];
-
-            $res = db('nine_ar')->insert($arr);
-
-            if ($res){
-                $requset = [
-                    'status'    => 200,
-                    'message' => '添加成功'
-                ];
-
-            }
-
-            return json_encode($requset);
         }else{
             $role = db('nine_role')->select();
 
             $project = db('back_project')->select();
 
-            $user = session('admin');
+            $user = $this->user;
 
             return view('addadmin',['role'=>$role,'project'=>$project,'user'=>$user]);
         }
@@ -331,9 +334,11 @@ class Power extends Common
         }
     }
 
+    //设置角色功能
     public function givefunction()
     {
         $role_id = session::get('role_id');
+
         if (request()->isGet()){
             $roleId = input('role_id');
 
@@ -341,12 +346,117 @@ class Power extends Common
 
             session('role_id',$roleid);
         }
-        $user = session('admin');
+        $user = $this->user;
 
         $power = db('nine_power')->select();
 
         $power = $this->recursion($power, 0);
-//        var_dump($power);die;
-        return view('givefunction',['user'=>$user]);
+        unset($power[0]);
+        unset($power[1]);
+        unset($power[2]);
+        return view('givefunction',['user'=>$user,'power'=>$power]);
     }
+
+    public function addmto()
+    {
+        //角色名称的id
+        $roleId = session::get('role_id');
+        if (Request::instance()->isPost()) {
+
+            $data = input();
+            $r_id = $roleId;
+            if (isset($data['p_id'])){
+                $r_id = $roleId;
+                $arr = [];
+                foreach ($data['p_id'] as $val){
+
+                    $arr[] = ['r_id'=>$r_id,'p_id'=>$val];
+                }
+
+                $res = db('nine_rp')->insertAll($arr);
+
+                if ($res){
+                    $this->redirect('admin/admin/Management');
+                }
+            }
+        }
+    }
+
+    public function setmanagement()
+    {
+
+        if (request()->isPost()){
+
+            //获取每页显示的条数
+            $limit= Request::instance()->param('limit');
+            //获取当前页数
+
+            $page= Request::instance()->param('page');
+
+            //计算出从那条开始查询
+            $tol=($page-1)*$limit;
+
+            //搜索
+            $porName = input('key');
+            // var_dump($porName);die;
+            $where = '1=1';
+
+            if (!empty($porName)){
+                $where.= " and por_name like '%".$porName."%' ";
+            }
+
+            //$data = db::table('nine_role')->select();
+
+            $role = db('back_project')->where($where)->limit($tol,$limit)->select();
+
+            $list = Db::name('back_project')->where($where)->select();
+
+            $count = count($list);
+
+            $result=array();
+            $result['code']=0;
+            $result['msg']="";
+            $result['count']=$count;
+            $result['data'] = $role;
+            //var_dump($result);die;
+            return json_encode($result);
+        }
+
+        return view('setManagement');
+    }
+
+
+    public function editadmin(){
+        $postdata= Request::instance()->param();
+
+        if(Request::instance()->isPost()){
+            if(empty($postdata['name'])||$postdata['project']==1){
+                $data['code']=0;
+                $data['msg']="填写完整";
+                return json($data);
+            }
+            $updata=Db::name('nine_admin')->where(['admin_id'=>$postdata['admin_id']])->update($postdata);
+            if($updata){
+                $data['code']=1;
+                $data['msg']="修改成功";
+                return json($data);
+            }else{
+                $data['code']=0;
+                $data['msg']="修改失败";
+                return json($data);
+            }
+        }
+
+        $project = db::name('back_project')->select();
+        $user=Db::name('nine_admin')->where(['admin_id'=>$postdata['role_id']])->find();
+        $user['project_name']=Db::name('back_project')->where(['pro_id'=>$user['project']])->value('por_name');
+        return view('editAdmin', [
+            'project' => $project,
+            'role'    => $user,
+        ]);
+    }
+
+
+
+
 }

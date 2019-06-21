@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <title>上海智慧务工-控制台</title>
+  <title>昱彤人力资源管理平台</title>
   <link rel="stylesheet" href="__STATIC__/resources/layui/css/layui.css" media="all">
   <link rel="stylesheet" href="__STATIC__/resources/css/style.css">
   <style>
@@ -17,11 +17,11 @@
 <body class="layui-layout-body">
 <div class="layui-layout layui-layout-admin">
   <div class="layui-header layui-bg-blue">
-    <div class="layui-logo">上海智慧务工</div>
+    <div class="layui-logo">昱彤人力资源</div>
     <!-- 头部区域（可配合layui已有的水平导航） -->
-    <ul class="layui-nav layui-layout-left">
-      <li class="layui-nav-item"><a href="">控制台</a></li>
-    </ul>
+    <!--    <ul class="layui-nav layui-layout-left">-->
+    <!--      <li class="layui-nav-item"><a href="">控制台</a></li>-->
+    <!--    </ul>-->
     <ul class="layui-nav layui-layout-right">
       <li class="layui-nav-item">
         <a href="javascript:;" id="changPwd">修改密码</a>
@@ -34,27 +34,31 @@
     <div class="layui-side-scroll">
       <div class="layui-row user">
         <div class="layui-col-xs4">
-          <img class="avator" src="http://t.cn/RCzsdCq">
+          <img class="avator" src="/static/resources/img/logo.png">
         </div>
         <div class="layui-col-xs8">
           <div class="info"><?php echo $user['admin']?></div>
-          <div class="info"><?=$user['status']==1 ? '超级管理员':'普通用户'?></div>
+          <div class="info"><?=$user['status']==2 ? '超级管理员':'普通用户'?></div>
         </div>
       </div>
       <!-- 左侧导航区域（可配合layui已有的垂直导航） -->
       <ul class="layui-nav layui-nav-tree" lay-filter="test">
-        <li class="layui-nav-item layui-nav-itemed"><a target="rightContent" href="{:url('admin/console/index')}">控制台</a></li>
+        <li class="layui-nav-item layui-nav-itemed layui-this">
+          <a target="rightContent" href="{:url('admin/console/index')}">控制台</a></li>
+        {if condition="$user.status eq 2"}
         <li class="layui-nav-item">
-          <a class="" href="javascript:;">管理员管理</a>
+          <a target="rightContent" href="{:url('admin/power/administrator')}">管理员管理</a>
           <dl class="layui-nav-child">
             <dd><a target="rightContent" href="{:url('admin/power/administrator')}">角色管理</a></dd>
-            <dd><a target="rightContent" href="{:url('admin/admin/management')}">角色功能管理</a></dd>
-            <dd><a target="rightContent" href="{:url('admin/power/setManagement')}">项目点管理</a></dd>
-            <dd><a target="rightContent" href="{:url('admin/admin/adminLog')}">管理员日志</a></dd>
+            <!--<dd><a target="rightContent" href="{:url('admin/admin/management')}">角色功能管理</a></dd>-->
+            <dd><a target="rightContent" href="{:url('admin/admin/config')}">配置</a></dd>
+            <!--<dd><a target="rightContent" href="{:url('admin/admin/role')}">配置路由</a></dd>-->
+            <!--<dd><a target="rightContent" href="{:url('admin/admin/adminLog')}">管理员日志</a></dd>-->
           </dl>
         </li>
+        {/if}
         <li class="layui-nav-item">
-          <a href="javascript:;">人事管理</a>
+          <a target="rightContent" href="{:url('admin/personnel/resumes')}">人事管理</a>
           <dl class="layui-nav-child">
             <dd><a target="rightContent" href="{:url('admin/personnel/resumes')}">人员简历管理</a></dd>
             <dd><a target="rightContent" href="{:url('admin/personnel/personnel')}">人员管理</a></dd>
@@ -62,22 +66,23 @@
           </dl>
         </li>
         <li class="layui-nav-item">
-          <a href="javascript:;">财务管理</a>
+          <a target="rightContent" href="{:url('admin/finance/submitsalary')}">财务管理</a>
           <dl class="layui-nav-child">
-            <dd><a target="rightContent" href="{:url('admin/finance/submitSalary')}">工资核算提交</a></dd>
-            <dd><a target="rightContent" href="{:url('admin/finance/searchSalary')}">薪资查询</a></dd>
-            <dd><a target="rightContent" href="{:url('admin/finance/socialSecurity')}">社保费用核算</a></dd>
-            <dd><a target="rightContent" href="{:url('admin/finance/checkMission')}">单项任务审核</a></dd>
+            <dd><a target="rightContent" href="{:url('admin/finance/submitsalary')}">工资核算提交</a></dd>
+            <dd><a target="rightContent" href="{:url('admin/finance/searchsalary')}">薪资查询</a></dd>
+            <dd><a target="rightContent" href="{:url('admin/finance/socialsecurity')}">社保费用核算</a></dd>
+            <dd><a target="rightContent" href="{:url('admin/finance/checkmission')}">单项任务审核</a></dd>
           </dl>
         </li>
-        <li class="layui-nav-item"><a target="rightContent" href="{:url('admin/admin/waitMission')}">代处理事件</a></li>
+        <li class="layui-nav-item"><a target="rightContent" href="{:url('admin/admin/waitmission')}">待处理事件</a></li>
       </ul>
     </div>
   </div>
 
   <div class="layui-body">
     <!-- 内容主体区域 -->
-      <iframe id='rightContent' name='rightContent' src="{:url('admin/console/index')}" width='100%' height="99.7%" frameborder="0"></iframe>
+    <iframe id='rightContent' name='rightContent' src="{:url('admin/console/index')}" width='100%' height="99.7%"
+            frameborder="0"></iframe>
 
     <div id="pass" style="display: none">
       <div style="background-color: #fff;padding: 20px 50px">
@@ -117,7 +122,7 @@
 
   <div class="layui-footer">
     <!-- 底部固定区域 -->
-    © layui.com - 底部固定区域
+    © 昱彤人力资源管理 - 2019
   </div>
 
 </div>
@@ -152,7 +157,7 @@
           if (res.code == 200) {
             window.location = "{:url('admin/login/index')}";
           } else {
-            alert(res.msg);
+            layer.msg(res.msg, {icon: 2});
           }
         }
       });
